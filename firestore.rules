@@ -1,0 +1,207 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net: default deny everything
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Primitive Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // --- Validation Blueprints ---
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll([
+        'uid', 'displayName', 'photoURL', 'provider', 'elo',
+        'totalWins', 'totalGames', 'winStreak',
+        'dominoWins', 'parquesWins', 'ahorcadoWins', 'bingoWins',
+        'voiceEnabled', 'soundEnabled', 'language', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'uid', 'displayName', 'photoURL', 'provider', 'elo',
+        'totalWins', 'totalGames', 'winStreak',
+        'dominoWins', 'parquesWins', 'ahorcadoWins', 'bingoWins',
+        'voiceEnabled', 'soundEnabled', 'language', 'createdAt', 'updatedAt'
+      ])
+      && data.uid is string && data.uid == request.auth.uid && data.uid == userId
+      && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 40
+      && data.photoURL is string && data.photoURL.size() <= 500
+      && data.provider in ['google', 'apple']
+      && data.elo is number && data.elo >= 0 && data.elo <= 10000
+      && data.totalWins is number && data.totalWins >= 0
+      && data.totalGames is number && data.totalGames >= data.totalWins
+      && data.winStreak is number && data.winStreak >= 0 && data.winStreak <= data.totalWins
+      && data.dominoWins is number && data.dominoWins >= 0
+      && data.parquesWins is number && data.parquesWins >= 0
+      && data.ahorcadoWins is number && data.ahorcadoWins >= 0
+      && data.bingoWins is number && data.bingoWins >= 0
+      && data.voiceEnabled is bool
+      && data.soundEnabled is bool
+      && data.language in ['en', 'es']
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidPrivateInfo(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'providerId', 'updatedAt'])
+      && data.keys().hasOnly(['uid', 'email', 'providerId', 'updatedAt'])
+      && data.uid is string && data.uid == request.auth.uid && data.uid == userId
+      && data.email is string && data.email.size() <= 254
+      && data.providerId is string && data.providerId.size() >= 1 && data.providerId.size() <= 64
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidLeaderboardEntry(data, entryId) {
+      return data.keys().hasAll([
+        'uid', 'displayName', 'photoURL', 'elo',
+        'totalWins', 'totalGames', 'winStreak', 'favoriteGame', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'uid', 'displayName', 'photoURL', 'elo',
+        'totalWins', 'totalGames', 'winStreak', 'favoriteGame', 'updatedAt'
+      ])
+      && data.uid is string && data.uid == request.auth.uid && data.uid == entryId
+      && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 40
+      && data.photoURL is string && data.photoURL.size() <= 500
+      && data.elo is number && data.elo >= 0 && data.elo <= 10000
+      && data.totalWins is number && data.totalWins >= 0
+      && data.totalGames is number && data.totalGames >= data.totalWins
+      && data.winStreak is number && data.winStreak >= 0 && data.winStreak <= data.totalWins
+      && data.favoriteGame in ['domino', 'parques', 'ahorcado', 'bingo']
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidMatchRecord(data, userId, matchId) {
+      return data.keys().hasAll(['id', 'uid', 'game', 'mode', 'outcome', 'score', 'eloDelta', 'createdAt'])
+      && data.keys().hasOnly(['id', 'uid', 'game', 'mode', 'outcome', 'score', 'eloDelta', 'createdAt'])
+      && data.id is string && data.id == matchId
+      && data.uid is string && data.uid == request.auth.uid && data.uid == userId
+      && data.game in ['domino', 'parques', 'ahorcado', 'bingo']
+      && data.mode in ['online', 'ai']
+      && data.outcome in ['win', 'loss', 'draw']
+      && data.score is number && data.score >= 0 && data.score <= 100000
+      && data.eloDelta is number && data.eloDelta >= -100 && data.eloDelta <= 100
+      && data.createdAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+
+    // User Profiles (Owner-only, No PII, No list)
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create: if isValidId(userId) && isVerified() && isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId) && isVerified() && isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().provider == existing().provider
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action: Update Preferences & Profile Display
+          incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'voiceEnabled', 'soundEnabled', 'language', 'updatedAt'])
+          ||
+          // Action: Record Match Progression (bounded ELO delta)
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'elo', 'totalWins', 'totalGames', 'winStreak',
+              'dominoWins', 'parquesWins', 'ahorcadoWins', 'bingoWins', 'updatedAt'
+            ])
+            && incoming().elo - existing().elo <= 100
+            && existing().elo - incoming().elo <= 100
+            && incoming().totalGames >= existing().totalGames
+            && incoming().totalGames - existing().totalGames <= 1
+            && incoming().totalWins >= existing().totalWins
+            && incoming().totalWins - existing().totalWins <= 1
+          )
+        );
+      allow delete: if false;
+
+      // Strictly isolated PII subcollection
+      match /private/{docId} {
+        allow get: if isValidId(userId) && isValidId(docId) && isOwner(userId);
+        allow list: if false;
+        allow create: if isValidId(userId) && isValidId(docId) && isVerified() && isOwner(userId)
+          && docId == 'info'
+          && isValidPrivateInfo(incoming(), userId)
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId) && isValidId(docId) && isVerified() && isOwner(userId)
+          && docId == 'info'
+          && isValidPrivateInfo(incoming(), userId)
+          && incoming().uid == existing().uid
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'providerId', 'updatedAt']);
+        allow delete: if false;
+      }
+
+      // Owner-only Match History Log
+      match /matches/{matchId} {
+        allow get: if isValidId(userId) && isValidId(matchId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(matchId) && isVerified() && isOwner(userId)
+          && isValidMatchRecord(incoming(), userId, matchId)
+          && incoming().createdAt == request.time;
+        allow update, delete: if false;
+      }
+    }
+
+    // Global Competitive Leaderboard
+    match /leaderboard/{entryId} {
+      allow get: if isValidId(entryId) && isSignedIn();
+      allow list: if isSignedIn() && resource.data.elo >= 0;
+      allow create: if isValidId(entryId) && isVerified() && isOwner(entryId)
+        && isValidLeaderboardEntry(incoming(), entryId)
+        && incoming().updatedAt == request.time
+        && existsAfter(/databases/$(database)/documents/users/$(request.auth.uid));
+      allow update: if isValidId(entryId) && isVerified() && isOwner(entryId)
+        && isValidLeaderboardEntry(incoming(), entryId)
+        && incoming().uid == existing().uid
+        && incoming().updatedAt == request.time
+        && (
+          // Action: Profile Sync
+          incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'favoriteGame', 'updatedAt'])
+          ||
+          // Action: Competitive Score Sync
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'displayName', 'photoURL', 'elo', 'totalWins', 'totalGames', 'winStreak', 'favoriteGame', 'updatedAt'
+            ])
+            && incoming().elo - existing().elo <= 100
+            && existing().elo - incoming().elo <= 100
+            && incoming().totalGames >= existing().totalGames
+            && incoming().totalGames - existing().totalGames <= 1
+            && incoming().totalWins >= existing().totalWins
+            && incoming().totalWins - existing().totalWins <= 1
+          )
+        );
+      allow delete: if false;
+    }
+  }
+}

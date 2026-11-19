@@ -1,0 +1,6 @@
+{
+  "name": "Mesa Real — Multiplayer Salon",
+  "description": "Real-time multiplayer Dominó, Parqués, Ahorcado, and Bingo arena with offline AI practice, animated voice announcer, social chat lobby, and global leaderboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

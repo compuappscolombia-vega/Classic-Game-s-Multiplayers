@@ -1,0 +1,457 @@
+import { initializeApp } from 'firebase/app';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  OAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+  type User,
+} from 'firebase/auth';
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  getDocFromServer,
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  onSnapshot,
+  writeBatch,
+  serverTimestamp,
+  updateDoc,
+  setDoc,
+  type Unsubscribe,
+} from 'firebase/firestore';
+import firebaseConfig from '../../firebase-applet-config.json';
+import type { GameMode, GameType, Language } from '../shared/types.ts';
+
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const auth = getAuth(app);
+
+export const OperationType = {
+  CREATE: 'create',
+  UPDATE: 'update',
+  DELETE: 'delete',
+  LIST: 'list',
+  GET: 'get',
+  WRITE: 'write',
+} as const;
+export type OperationTypeValue = (typeof OperationType)[keyof typeof OperationType];
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationTypeValue;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  };
+}
+
+export function handleFirestoreError(
+  error: unknown,
+  operationType: OperationTypeValue,
+  path: string | null
+): never {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo:
+        auth.currentUser?.providerData?.map((provider) => ({
+          providerId: provider.providerId,
+          email: provider.email,
+        })) || [],
+    },
+    operationType,
+    path,
+  };
+  console.error('Firestore Error:', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
+async function testConnection() {
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('the client is offline')) {
+      console.error('Please check your Firebase configuration.');
+    }
+  }
+}
+void testConnection();
+
+export interface UserProfile {
+  uid: string;
+  displayName: string;
+  photoURL: string;
+  provider: 'google' | 'apple';
+  elo: number;
+  totalWins: number;
+  totalGames: number;
+  winStreak: number;
+  dominoWins: number;
+  parquesWins: number;
+  ahorcadoWins: number;
+  bingoWins: number;
+  voiceEnabled: boolean;
+  soundEnabled: boolean;
+  language: Language;
+}
+
+export interface LeaderboardEntry {
+  uid: string;
+  displayName: string;
+  photoURL: string;
+  elo: number;
+  totalWins: number;
+  totalGames: number;
+  winStreak: number;
+  favoriteGame: GameType;
+}
+
+export interface MatchHistoryRecord {
+  id: string;
+  uid: string;
+  game: GameType;
+  mode: GameMode;
+  outcome: 'win' | 'loss' | 'draw';
+  score: number;
+  eloDelta: number;
+  createdAtMs: number;
+}
+
+export async function signInWithGoogle(): Promise<User> {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  const cred = await signInWithPopup(auth, provider);
+  return cred.user;
+}
+
+export async function signInWithApple(): Promise<User> {
+  const provider = new OAuthProvider('apple.com');
+  provider.addScope('email');
+  provider.addScope('name');
+  const cred = await signInWithPopup(auth, provider);
+  return cred.user;
+}
+
+export async function signOutAccount(): Promise<void> {
+  await signOut(auth);
+}
+
+export function subscribeAuth(cb: (user: User | null) => void): Unsubscribe {
+  return onAuthStateChanged(auth, cb);
+}
+
+function inferFavoriteGame(profile: UserProfile): GameType {
+  const counts: [GameType, number][] = [
+    ['domino', profile.dominoWins],
+    ['parques', profile.parquesWins],
+    ['ahorcado', profile.ahorcadoWins],
+    ['bingo', profile.bingoWins],
+  ];
+  counts.sort((a, b) => b[1] - a[1]);
+  return counts[0][0];
+}
+
+export async function ensureAndLoadUserProfile(user: User): Promise<UserProfile> {
+  const userRef = doc(db, 'users', user.uid);
+  const privateRef = doc(db, 'users', user.uid, 'private', 'info');
+  const lbRef = doc(db, 'leaderboard', user.uid);
+
+  let snap;
+  try {
+    snap = await getDoc(userRef);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.GET, `users/${user.uid}`);
+  }
+
+  const providerId = user.providerData?.[0]?.providerId || 'google.com';
+  const provider: 'google' | 'apple' = providerId.includes('apple') ? 'apple' : 'google';
+  const cleanName = (user.displayName || user.email?.split('@')[0] || 'Player').trim().slice(0, 40) || 'Player';
+  const cleanPhoto = (user.photoURL || '').slice(0, 500);
+
+  if (snap.exists()) {
+    const data = snap.data();
+    const profile: UserProfile = {
+      uid: user.uid,
+      displayName: String(data.displayName || cleanName).slice(0, 40),
+      photoURL: String(data.photoURL || cleanPhoto).slice(0, 500),
+      provider: data.provider === 'apple' ? 'apple' : 'google',
+      elo: Number(data.elo ?? 1000),
+      totalWins: Number(data.totalWins ?? 0),
+      totalGames: Number(data.totalGames ?? 0),
+      winStreak: Number(data.winStreak ?? 0),
+      dominoWins: Number(data.dominoWins ?? 0),
+      parquesWins: Number(data.parquesWins ?? 0),
+      ahorcadoWins: Number(data.ahorcadoWins ?? 0),
+      bingoWins: Number(data.bingoWins ?? 0),
+      voiceEnabled: Boolean(data.voiceEnabled ?? true),
+      soundEnabled: Boolean(data.soundEnabled ?? true),
+      language: data.language === 'es' ? 'es' : 'en',
+    };
+
+    // Ensure private info and leaderboard entry stay synchronized
+    try {
+      const lbSnap = await getDoc(lbRef);
+      if (!lbSnap.exists()) {
+        await setDoc(lbRef, {
+          uid: user.uid,
+          displayName: profile.displayName,
+          photoURL: profile.photoURL,
+          elo: profile.elo,
+          totalWins: profile.totalWins,
+          totalGames: profile.totalGames,
+          winStreak: profile.winStreak,
+          favoriteGame: inferFavoriteGame(profile),
+          updatedAt: serverTimestamp(),
+        });
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `leaderboard/${user.uid}`);
+    }
+
+    return profile;
+  }
+
+  // Create initial profile, private info, and leaderboard entry atomically
+  const initialProfile: UserProfile = {
+    uid: user.uid,
+    displayName: cleanName,
+    photoURL: cleanPhoto,
+    provider,
+    elo: 1000,
+    totalWins: 0,
+    totalGames: 0,
+    winStreak: 0,
+    dominoWins: 0,
+    parquesWins: 0,
+    ahorcadoWins: 0,
+    bingoWins: 0,
+    voiceEnabled: true,
+    soundEnabled: true,
+    language: 'en',
+  };
+
+  try {
+    const batch = writeBatch(db);
+    batch.set(userRef, {
+      ...initialProfile,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    batch.set(privateRef, {
+      uid: user.uid,
+      email: (user.email || '').slice(0, 254),
+      providerId: providerId.slice(0, 64),
+      updatedAt: serverTimestamp(),
+    });
+    batch.set(lbRef, {
+      uid: user.uid,
+      displayName: initialProfile.displayName,
+      photoURL: initialProfile.photoURL,
+      elo: initialProfile.elo,
+      totalWins: 0,
+      totalGames: 0,
+      winStreak: 0,
+      favoriteGame: 'domino',
+      updatedAt: serverTimestamp(),
+    });
+    await batch.commit();
+  } catch (err) {
+    handleFirestoreError(err, OperationType.CREATE, `users/${user.uid}`);
+  }
+
+  return initialProfile;
+}
+
+export async function updateUserPreferences(
+  uid: string,
+  prefs: Partial<Pick<UserProfile, 'displayName' | 'voiceEnabled' | 'soundEnabled' | 'language'>>
+): Promise<void> {
+  const userRef = doc(db, 'users', uid);
+  const lbRef = doc(db, 'leaderboard', uid);
+
+  const payload: Record<string, unknown> = { updatedAt: serverTimestamp() };
+  if (prefs.displayName !== undefined) {
+    payload.displayName = prefs.displayName.trim().slice(0, 40) || 'Player';
+  }
+  if (prefs.voiceEnabled !== undefined) payload.voiceEnabled = prefs.voiceEnabled;
+  if (prefs.soundEnabled !== undefined) payload.soundEnabled = prefs.soundEnabled;
+  if (prefs.language !== undefined) payload.language = prefs.language;
+
+  try {
+    await updateDoc(userRef, payload);
+    if (prefs.displayName !== undefined) {
+      await updateDoc(lbRef, {
+        displayName: payload.displayName,
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch (err) {
+    handleFirestoreError(err, OperationType.UPDATE, `users/${uid}`);
+  }
+}
+
+export async function recordMatchOutcome(
+  profile: UserProfile,
+  params: { game: GameType; mode: GameMode; outcome: 'win' | 'loss' | 'draw'; score: number }
+): Promise<UserProfile> {
+  const isWin = params.outcome === 'win';
+  const eloDelta =
+    params.mode === 'online'
+      ? isWin
+        ? 25
+        : params.outcome === 'draw'
+        ? 4
+        : -15
+      : isWin
+      ? 10
+      : 0;
+
+  const nextElo = Math.min(10000, Math.max(0, profile.elo + eloDelta));
+  const nextTotalGames = profile.totalGames + 1;
+  const nextTotalWins = profile.totalWins + (isWin ? 1 : 0);
+  const nextStreak = isWin ? profile.winStreak + 1 : 0;
+
+  const nextProfile: UserProfile = {
+    ...profile,
+    elo: nextElo,
+    totalGames: nextTotalGames,
+    totalWins: nextTotalWins,
+    winStreak: nextStreak,
+    dominoWins: profile.dominoWins + (isWin && params.game === 'domino' ? 1 : 0),
+    parquesWins: profile.parquesWins + (isWin && params.game === 'parques' ? 1 : 0),
+    ahorcadoWins: profile.ahorcadoWins + (isWin && params.game === 'ahorcado' ? 1 : 0),
+    bingoWins: profile.bingoWins + (isWin && params.game === 'bingo' ? 1 : 0),
+  };
+
+  const matchId = `m_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const userRef = doc(db, 'users', profile.uid);
+  const lbRef = doc(db, 'leaderboard', profile.uid);
+  const matchRef = doc(db, 'users', profile.uid, 'matches', matchId);
+
+  try {
+    const batch = writeBatch(db);
+    batch.update(userRef, {
+      elo: nextProfile.elo,
+      totalWins: nextProfile.totalWins,
+      totalGames: nextProfile.totalGames,
+      winStreak: nextProfile.winStreak,
+      dominoWins: nextProfile.dominoWins,
+      parquesWins: nextProfile.parquesWins,
+      ahorcadoWins: nextProfile.ahorcadoWins,
+      bingoWins: nextProfile.bingoWins,
+      updatedAt: serverTimestamp(),
+    });
+    batch.update(lbRef, {
+      displayName: nextProfile.displayName,
+      photoURL: nextProfile.photoURL,
+      elo: nextProfile.elo,
+      totalWins: nextProfile.totalWins,
+      totalGames: nextProfile.totalGames,
+      winStreak: nextProfile.winStreak,
+      favoriteGame: inferFavoriteGame(nextProfile),
+      updatedAt: serverTimestamp(),
+    });
+    batch.set(matchRef, {
+      id: matchId,
+      uid: profile.uid,
+      game: params.game,
+      mode: params.mode,
+      outcome: params.outcome,
+      score: Math.min(100000, Math.max(0, Math.round(params.score))),
+      eloDelta,
+      createdAt: serverTimestamp(),
+    });
+    await batch.commit();
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, `users/${profile.uid}/matches/${matchId}`);
+  }
+
+  return nextProfile;
+}
+
+export function subscribeToLeaderboard(
+  onData: (entries: LeaderboardEntry[]) => void
+): Unsubscribe {
+  const lbQuery = query(
+    collection(db, 'leaderboard'),
+    where('elo', '>=', 0),
+    orderBy('elo', 'desc'),
+    limit(50)
+  );
+  return onSnapshot(
+    lbQuery,
+    (snapshot) => {
+      const rows: LeaderboardEntry[] = snapshot.docs.map((d) => {
+        const data = d.data();
+        return {
+          uid: String(data.uid || d.id),
+          displayName: String(data.displayName || 'Player'),
+          photoURL: String(data.photoURL || ''),
+          elo: Number(data.elo ?? 1000),
+          totalWins: Number(data.totalWins ?? 0),
+          totalGames: Number(data.totalGames ?? 0),
+          winStreak: Number(data.winStreak ?? 0),
+          favoriteGame: (data.favoriteGame || 'domino') as GameType,
+        };
+      });
+      onData(rows);
+    },
+    (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'leaderboard');
+    }
+  );
+}
+
+export function subscribeToMatchHistory(
+  uid: string,
+  onData: (records: MatchHistoryRecord[]) => void
+): Unsubscribe {
+  const q = query(
+    collection(db, 'users', uid, 'matches'),
+    where('uid', '==', uid),
+    orderBy('createdAt', 'desc'),
+    limit(20)
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const list: MatchHistoryRecord[] = snapshot.docs.map((d) => {
+        const data = d.data();
+        const ts = data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now();
+        return {
+          id: String(data.id || d.id),
+          uid: String(data.uid || uid),
+          game: (data.game || 'domino') as GameType,
+          mode: (data.mode || 'ai') as GameMode,
+          outcome: (data.outcome || 'win') as 'win' | 'loss' | 'draw',
+          score: Number(data.score ?? 0),
+          eloDelta: Number(data.eloDelta ?? 0),
+          createdAtMs: ts,
+        };
+      });
+      onData(list);
+    },
+    (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${uid}/matches`);
+    }
+  );
+}

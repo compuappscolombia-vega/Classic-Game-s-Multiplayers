@@ -1,0 +1,230 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Public-safe competitive player profile and cross-device preference synchronization (no PII).",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "provider": {
+          "type": "string",
+          "enum": ["google", "apple"]
+        },
+        "elo": {
+          "type": "number"
+        },
+        "totalWins": {
+          "type": "number"
+        },
+        "totalGames": {
+          "type": "number"
+        },
+        "winStreak": {
+          "type": "number"
+        },
+        "dominoWins": {
+          "type": "number"
+        },
+        "parquesWins": {
+          "type": "number"
+        },
+        "ahorcadoWins": {
+          "type": "number"
+        },
+        "bingoWins": {
+          "type": "number"
+        },
+        "voiceEnabled": {
+          "type": "boolean"
+        },
+        "soundEnabled": {
+          "type": "boolean"
+        },
+        "language": {
+          "type": "string",
+          "enum": ["en", "es"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "photoURL",
+        "provider",
+        "elo",
+        "totalWins",
+        "totalGames",
+        "winStreak",
+        "dominoWins",
+        "parquesWins",
+        "ahorcadoWins",
+        "bingoWins",
+        "voiceEnabled",
+        "soundEnabled",
+        "language",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Strictly owner-only PII container for account email and auth provider metadata.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 254
+        },
+        "providerId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "providerId", "updatedAt"]
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Global competitive ranking entry keyed by player UID.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "elo": {
+          "type": "number"
+        },
+        "totalWins": {
+          "type": "number"
+        },
+        "totalGames": {
+          "type": "number"
+        },
+        "winStreak": {
+          "type": "number"
+        },
+        "favoriteGame": {
+          "type": "string",
+          "enum": ["domino", "parques", "ahorcado", "bingo"]
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "photoURL",
+        "elo",
+        "totalWins",
+        "totalGames",
+        "winStreak",
+        "favoriteGame",
+        "updatedAt"
+      ]
+    },
+    "MatchRecord": {
+      "title": "MatchRecord",
+      "description": "Completed match history record owned by the player for cross-device sync.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "game": {
+          "type": "string",
+          "enum": ["domino", "parques", "ahorcado", "bingo"]
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["online", "ai"]
+        },
+        "outcome": {
+          "type": "string",
+          "enum": ["win", "loss", "draw"]
+        },
+        "score": {
+          "type": "number"
+        },
+        "eloDelta": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "uid", "game", "mode", "outcome", "score", "eloDelta", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Owner-only player profile, stats, and preferences synchronized across devices."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateInfo" },
+      "description": "Owner-only isolated PII document (email, provider metadata)."
+    },
+    "/users/{userId}/matches/{matchId}": {
+      "schema": { "$ref": "#/entities/MatchRecord" },
+      "description": "Owner-only match history log for player statistics and cross-device sync."
+    },
+    "/leaderboard/{entryId}": {
+      "schema": { "$ref": "#/entities/LeaderboardEntry" },
+      "description": "Global competitive leaderboard readable by signed-in players and writable only by the owning player."
+    }
+  }
+}
