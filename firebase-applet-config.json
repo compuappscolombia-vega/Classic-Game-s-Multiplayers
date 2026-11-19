@@ -1,12 +1,12 @@
 {
-  "projectId": "agile-gamma-rpt51",
-  "appId": "1:371448886761:web:eb39113133813287ac0778",
-  "apiKey": "AIzaSyC1bCtC_47p8KaisnucjqpJ2RCXTfx5uN8",
-  "authDomain": "agile-gamma-rpt51.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-a95db959-1226-4ba5-8b37-37996d90684b",
-  "storageBucket": "agile-gamma-rpt51.firebasestorage.app",
-  "messagingSenderId": "371448886761",
+  "projectId": "gen-lang-client-0047019960",
+  "appId": "1:340386711236:web:cb7a1d2cb19afc8ff8eb91",
+  "apiKey": "AIzaSyA36oaR43g79JTE4XE_jRyQBxZAnGyf8HY",
+  "authDomain": "gen-lang-client-0047019960.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-classicgamesmult-1b35e1ce-a60e-4315-9d5a-3a6c35bccfd9",
+  "storageBucket": "gen-lang-client-0047019960.firebasestorage.app",
+  "messagingSenderId": "340386711236",
   "measurementId": "",
-  "oAuthClientId": "371448886761-au8kaaupi6i0a8c9jadvsrna4fevgjij.apps.googleusercontent.com",
+  "oAuthClientId": "340386711236-bbnpfgvl0ngov0b4l2hc2aidvujd4dmi.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }

@@ -34,16 +34,15 @@ const PIP_COORDS: Record<number, [number, number][]> = {
 
 function PipFace({ value, size = 36 }: { value: number; size?: number }) {
   const pips = PIP_COORDS[value] || [];
+  const pipFill = value === 6 ? '#881337' : value === 5 ? '#1E3A8A' : '#1E1712';
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" className="shrink-0" aria-hidden="true">
       {pips.map(([cx, cy], idx) => (
-        <circle
-          key={idx}
-          cx={cx}
-          cy={cy}
-          r={10.5}
-          fill={value === 6 ? '#991B1B' : value === 5 ? '#1E3A8A' : '#1C1917'}
-        />
+        <g key={idx}>
+          <circle cx={cx} cy={cy + 2} r={11} fill="#FFFDF8" opacity="0.6" />
+          <circle cx={cx} cy={cy} r={10.5} fill={pipFill} />
+          <circle cx={cx - 2} cy={cy - 2} r={3} fill="#000000" opacity="0.35" />
+        </g>
       ))}
     </svg>
   );
@@ -72,27 +71,35 @@ function DominoPiece({
       type="button"
       onClick={onClick}
       disabled={!onClick}
-      className={`rounded-lg bg-[#faf6ee] border-2 shadow-md transition-transform duration-150 flex items-center justify-center select-none ${
-        horizontal ? 'flex-row px-1.5 py-1 gap-1' : 'flex-col py-1.5 px-1 gap-1'
+      className={`rounded-xl ivory-3d border transition-transform duration-150 flex items-center justify-center select-none relative ${
+        horizontal ? 'flex-row px-2 py-1.5 gap-1.5' : 'flex-col py-2 px-1.5 gap-1.5'
       } ${
         selected
-          ? 'border-amber-400 -translate-y-2 ring-2 ring-amber-400/50 cursor-pointer'
+          ? 'border-amber-400 -translate-y-2.5 ring-2 ring-amber-400/75 cursor-pointer'
           : playable
-          ? 'border-emerald-500 hover:-translate-y-1.5 cursor-pointer'
+          ? 'border-emerald-500 hover:-translate-y-1.5 ring-1 ring-emerald-400/50 cursor-pointer'
           : onClick
-          ? 'border-stone-400/70 opacity-55 cursor-not-allowed'
-          : 'border-stone-300 cursor-default'
+          ? 'border-[#b9a585] opacity-60 cursor-not-allowed'
+          : 'border-[#c8b698] cursor-default'
       }`}
       aria-label={`Domino ${a}-${b}`}
     >
       <PipFace value={a} size={faceSize} />
-      <div
-        className={
-          horizontal
-            ? 'w-[2px] h-7 bg-stone-400/70 rounded-full'
-            : 'h-[2px] w-7 bg-stone-400/70 rounded-full'
-        }
-      />
+      <div className="relative flex items-center justify-center">
+        <div
+          className={
+            horizontal
+              ? 'w-[2px] h-7 bg-[#8d795b]/75 rounded-full'
+              : 'h-[2px] w-7 bg-[#8d795b]/75 rounded-full'
+          }
+        />
+        <span
+          className="absolute w-2 h-2 rounded-full border border-[#78531b]/70"
+          style={{
+            background: 'radial-gradient(circle at 30% 30%, #fef08a 0%, #d97706 65%, #78350f 100%)',
+          }}
+        />
+      </div>
       <PipFace value={b} size={faceSize} />
     </button>
   );
@@ -262,7 +269,7 @@ export function DominoArena({
   return (
     <div className="flex flex-col gap-3 h-full">
       {/* Compact Perimeter HUD */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-[#141b18] border border-white/10">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-[#16120f] border border-amber-500/20 shadow-lg">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -280,196 +287,207 @@ export function DominoArena({
 
         <div className="flex items-center gap-4 text-xs font-mono-num">
           <span className="text-stone-300">Boneyard: {state.boneyardCount}</span>
-          <span className="text-emerald-400 font-semibold">
+          <span className="text-amber-300 font-semibold">
             Turn: {playerNames[activePlayerId] || 'Player'}
           </span>
         </div>
       </div>
 
-      {/* Main Baize Table */}
-      <div className="flex-1 min-h-[440px] rounded-2xl walnut-trim p-2.5 sm:p-4 flex flex-col">
-        <div className="flex-1 rounded-xl baize-surface border border-emerald-950/80 p-3 sm:p-5 flex flex-col justify-between gap-4 relative overflow-hidden">
-          {/* Opponents Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            {opponents.map((oppId) => {
-              const p = playerMap[oppId];
-              const isTurn = activePlayerId === oppId && !state.winnerId;
-              const count = state.handCounts[oppId] ?? 0;
-              return (
-                <div
-                  key={oppId}
-                  className={`px-3 py-2 rounded-xl border flex items-center justify-between gap-2 transition-colors ${
-                    isTurn
-                      ? 'bg-amber-500/15 border-amber-400/50'
-                      : 'bg-black/25 border-white/10'
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <div className="text-xs font-semibold text-[#f4f1ea] truncate">
-                      {p?.name || 'Opponent'}
-                    </div>
-                    <div className="text-[11px] text-stone-400">
-                      {isTurn ? 'Thinking...' : 'Waiting'}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 font-mono-num text-xs font-bold text-amber-200">
-                    <span>{count}</span>
-                    <span className="text-stone-400 font-normal">tiles</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Center Domino Chain */}
-          <div className="flex-1 flex flex-col items-center justify-center gap-3 min-h-[170px]">
-            {state.board.length === 0 ? (
-              <div className="text-center space-y-1">
-                <p className="text-sm font-medium text-emerald-100/80">
-                  Table is open — select any tile in your hand to start the chain
-                </p>
-                <p className="text-xs text-emerald-200/55">Double-6 opens in classic play</p>
-              </div>
-            ) : (
-              <div className="w-full flex flex-wrap items-center justify-center gap-1.5 max-h-[240px] overflow-y-auto p-2">
-                {selectedSides.includes('left') && (
-                  <button
-                    type="button"
-                    onClick={() => selectedTileId && executePlay(selectedTileId, 'left')}
-                    className="min-h-[44px] px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold cursor-pointer"
-                  >
-                    Place Left ({state.leftEnd})
-                  </button>
-                )}
-
-                {state.board.map((placed) => (
-                  <DominoPiece
-                    key={placed.id}
-                    a={placed.left}
-                    b={placed.right}
-                    horizontal={!placed.isDouble}
-                    compact
-                  />
-                ))}
-
-                {selectedSides.includes('right') && (
-                  <button
-                    type="button"
-                    onClick={() => selectedTileId && executePlay(selectedTileId, 'right')}
-                    className="min-h-[44px] px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold cursor-pointer"
-                  >
-                    Place Right ({state.rightEnd})
-                  </button>
-                )}
-              </div>
-            )}
-
-            {state.leftEnd !== null && state.rightEnd !== null && (
-              <div className="flex items-center gap-4 text-xs font-mono-num text-emerald-100/80">
-                <span>Left End: {state.leftEnd}</span>
-                <span aria-hidden="true">·</span>
-                <span>Right End: {state.rightEnd}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Local Player Tray & Actions */}
-          <div className="bg-black/30 border border-white/10 rounded-xl p-3 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="text-xs font-semibold text-[#f4f1ea]">
-                Your Hand ({myHand.length} tiles) ·{' '}
-                <span className={isMyTurn ? 'text-emerald-400' : 'text-stone-400'}>
-                  {isMyTurn ? 'Your Turn — tap a highlighted tile' : 'Waiting for turn'}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={!isMyTurn || playableMoves.length > 0 || state.boneyardCount === 0}
-                  onClick={handleDraw}
-                  className="min-h-[40px] px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-35 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Layers className="w-3.5 h-3.5" />
-                  Draw ({state.boneyardCount})
-                </button>
-
-                <button
-                  type="button"
-                  disabled={!isMyTurn || playableMoves.length > 0 || state.boneyardCount > 0}
-                  onClick={handlePass}
-                  className="min-h-[40px] px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 disabled:opacity-35 text-stone-100 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
-                >
-                  <SkipForward className="w-3.5 h-3.5" />
-                  Pass
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {myHand.map((t) => {
-                const canPlay = isMyTurn && playableTileIds.has(t.id);
+      {/* Main Oak Tabletop -> Mahogany Rail -> Emerald Felt Baize */}
+      <div className="flex-1 min-h-[460px] wood-tabletop rounded-2xl p-2.5 sm:p-4 border border-amber-900/40 flex flex-col">
+        <div className="flex-1 rounded-2xl mahogany-frame p-3 sm:p-4 flex flex-col">
+          <div className="flex-1 rounded-xl baize-surface border border-emerald-950/90 p-3 sm:p-5 flex flex-col justify-between gap-4 relative overflow-hidden">
+            {/* Opponents Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {opponents.map((oppId) => {
+                const p = playerMap[oppId];
+                const isTurn = activePlayerId === oppId && !state.winnerId;
+                const count = state.handCounts[oppId] ?? 0;
                 return (
-                  <DominoPiece
-                    key={t.id}
-                    a={t.a}
-                    b={t.b}
-                    playable={canPlay}
-                    selected={selectedTileId === t.id}
-                    onClick={() => handleTileClick(t.id)}
-                  />
+                  <div
+                    key={oppId}
+                    className={`px-3.5 py-2.5 rounded-xl border flex items-center justify-between gap-2 transition-colors shadow-md ${
+                      isTurn
+                        ? 'bg-amber-500/18 border-amber-400/60'
+                        : 'bg-black/35 border-white/10'
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold text-[#f4f1ea] truncate">
+                        {p?.name || 'Opponent'}
+                      </div>
+                      <div className="text-[11px] text-stone-400">
+                        {isTurn ? 'Thinking...' : 'Waiting'}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex -space-x-1" aria-hidden="true">
+                        {Array.from({ length: Math.min(count, 4) }).map((_, i) => (
+                          <span
+                            key={i}
+                            className="w-2.5 h-4 rounded-[2px] ivory-3d border border-[#b6a382]"
+                          />
+                        ))}
+                      </div>
+                      <span className="font-mono-num text-xs font-bold text-amber-200">
+                        {count}
+                      </span>
+                    </div>
+                  </div>
                 );
               })}
             </div>
-          </div>
 
-          {/* Victory / Round Summary Modal */}
-          {state.winnerId && (
-            <div className="absolute inset-0 bg-black/75 flex items-center justify-center p-4 z-20">
-              <div className="w-full max-w-sm bg-[#141b18] border border-white/15 rounded-2xl p-6 text-center space-y-4 shadow-2xl">
-                <Trophy className="w-10 h-10 text-amber-400 mx-auto" />
-                <div>
-                  <h3 className="text-xl font-bold text-[#f4f1ea]">
-                    {state.winnerId === localPlayer.id
-                      ? 'Victory!'
-                      : `${playerNames[state.winnerId] || 'Opponent'} Wins`}
-                  </h3>
-                  <p className="text-xs text-stone-400 mt-1">{state.lastActionText}</p>
+            {/* Center Domino Chain */}
+            <div className="flex-1 flex flex-col items-center justify-center gap-3 min-h-[180px]">
+              {state.board.length === 0 ? (
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-medium text-emerald-100/85">
+                    Table is open — select any ivory tile in your rack to start the chain
+                  </p>
+                  <p className="text-xs text-emerald-200/55">Double-6 opens in classic play</p>
                 </div>
-
-                <div className="space-y-1.5 text-sm border-y border-white/10 py-3">
-                  {state.turnOrder.map((pid) => (
-                    <div key={pid} className="flex items-center justify-between">
-                      <span className="text-stone-300">{playerNames[pid]}</span>
-                      <span className="font-mono-num font-bold text-emerald-300">
-                        {state.scores[pid] || 0} pts
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-2.5">
-                  {mode === 'ai' && (
+              ) : (
+                <div className="w-full flex flex-wrap items-center justify-center gap-2 max-h-[250px] overflow-y-auto p-3">
+                  {selectedSides.includes('left') && (
                     <button
                       type="button"
-                      onClick={handleRestartAi}
-                      className="flex-1 min-h-[44px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer"
+                      onClick={() => selectedTileId && executePlay(selectedTileId, 'left')}
+                      className="min-h-[44px] px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold cursor-pointer shadow-lg"
                     >
-                      <RotateCcw className="w-4 h-4" />
-                      Play Again
+                      Place Left ({state.leftEnd})
                     </button>
                   )}
+
+                  {state.board.map((placed) => (
+                    <DominoPiece
+                      key={placed.id}
+                      a={placed.left}
+                      b={placed.right}
+                      horizontal={!placed.isDouble}
+                      compact
+                    />
+                  ))}
+
+                  {selectedSides.includes('right') && (
+                    <button
+                      type="button"
+                      onClick={() => selectedTileId && executePlay(selectedTileId, 'right')}
+                      className="min-h-[44px] px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold cursor-pointer shadow-lg"
+                    >
+                      Place Right ({state.rightEnd})
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {state.leftEnd !== null && state.rightEnd !== null && (
+                <div className="flex items-center gap-4 text-xs font-mono-num text-emerald-100/85">
+                  <span>Left End: {state.leftEnd}</span>
+                  <span aria-hidden="true">·</span>
+                  <span>Right End: {state.rightEnd}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Recessed Walnut Tile Rack & Actions */}
+            <div className="walnut-trim border border-amber-500/20 rounded-xl p-3.5 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="text-xs font-semibold text-[#f4f1ea]">
+                  Your Hand ({myHand.length} tiles) ·{' '}
+                  <span className={isMyTurn ? 'text-emerald-300' : 'text-stone-400'}>
+                    {isMyTurn ? 'Your Turn — tap a highlighted tile' : 'Waiting for turn'}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={onExit}
-                    className="flex-1 min-h-[44px] px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-stone-100 text-sm font-semibold cursor-pointer"
+                    disabled={!isMyTurn || playableMoves.length > 0 || state.boneyardCount === 0}
+                    onClick={handleDraw}
+                    className="min-h-[40px] px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-35 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow"
                   >
-                    Exit Table
+                    <Layers className="w-3.5 h-3.5" />
+                    Draw ({state.boneyardCount})
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={!isMyTurn || playableMoves.length > 0 || state.boneyardCount > 0}
+                    onClick={handlePass}
+                    className="min-h-[40px] px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 disabled:opacity-35 text-stone-100 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <SkipForward className="w-3.5 h-3.5" />
+                    Pass
                   </button>
                 </div>
               </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+                {myHand.map((t) => {
+                  const canPlay = isMyTurn && playableTileIds.has(t.id);
+                  return (
+                    <DominoPiece
+                      key={t.id}
+                      a={t.a}
+                      b={t.b}
+                      playable={canPlay}
+                      selected={selectedTileId === t.id}
+                      onClick={() => handleTileClick(t.id)}
+                    />
+                  );
+                })}
+              </div>
             </div>
-          )}
+
+            {/* Victory / Round Summary Modal */}
+            {state.winnerId && (
+              <div className="absolute inset-0 bg-black/75 flex items-center justify-center p-4 z-20">
+                <div className="w-full max-w-sm bg-[#141b18] border border-white/15 rounded-2xl p-6 text-center space-y-4 shadow-2xl">
+                  <Trophy className="w-10 h-10 text-amber-400 mx-auto" />
+                  <div>
+                    <h3 className="text-xl font-bold text-[#f4f1ea]">
+                      {state.winnerId === localPlayer.id
+                        ? 'Victory!'
+                        : `${playerNames[state.winnerId] || 'Opponent'} Wins`}
+                    </h3>
+                    <p className="text-xs text-stone-400 mt-1">{state.lastActionText}</p>
+                  </div>
+
+                  <div className="space-y-1.5 text-sm border-y border-white/10 py-3">
+                    {state.turnOrder.map((pid) => (
+                      <div key={pid} className="flex items-center justify-between">
+                        <span className="text-stone-300">{playerNames[pid]}</span>
+                        <span className="font-mono-num font-bold text-emerald-300">
+                          {state.scores[pid] || 0} pts
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-2.5">
+                    {mode === 'ai' && (
+                      <button
+                        type="button"
+                        onClick={handleRestartAi}
+                        className="flex-1 min-h-[44px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Play Again
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={onExit}
+                      className="flex-1 min-h-[44px] px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-stone-100 text-sm font-semibold cursor-pointer"
+                    >
+                      Exit Table
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

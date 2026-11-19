@@ -31,11 +31,11 @@ interface BingoArenaProps {
 const HEADERS = ['B', 'I', 'N', 'G', 'O'];
 
 function getBallColor(num: number): string {
-  if (num <= 15) return 'bg-rose-600 border-rose-300';
-  if (num <= 30) return 'bg-blue-600 border-blue-300';
-  if (num <= 45) return 'bg-amber-600 border-amber-200';
-  if (num <= 60) return 'bg-emerald-600 border-emerald-300';
-  return 'bg-indigo-600 border-indigo-300';
+  if (num <= 15) return 'bg-rose-600 border-rose-300/70';
+  if (num <= 30) return 'bg-blue-600 border-blue-300/70';
+  if (num <= 45) return 'bg-amber-600 border-amber-200/70';
+  if (num <= 60) return 'bg-emerald-600 border-emerald-300/70';
+  return 'bg-indigo-600 border-indigo-300/70';
 }
 
 export function BingoArena({
@@ -178,7 +178,7 @@ export function BingoArena({
   return (
     <div className="flex flex-col gap-3 h-full">
       {/* Header HUD */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-[#141b18] border border-white/10">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-[#16120f] border border-amber-500/20 shadow-lg">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -224,41 +224,45 @@ export function BingoArena({
         </div>
       </div>
 
-      {/* Main Split: Ball Cage + 5x5 Card */}
+      {/* Main Split: 3D Ball Caller + Mahogany & Ivory 5x5 Card */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start flex-1">
-        {/* Left 5 cols: Ball Caller + Recent Balls + Players */}
+        {/* Left 5 cols: Glossy 3D Ball Caller + Walnut Ball Rail + Contenders */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="bg-[#141b18] border border-white/10 rounded-2xl p-5 flex flex-col items-center gap-4 text-center">
-            <span className="text-xs text-stone-400">Current Ball</span>
+          <div className="bg-[#16120f] border border-amber-500/20 rounded-2xl p-5 flex flex-col items-center gap-4 text-center shadow-xl">
+            <span className="text-xs text-stone-400">Current Phenolic Ball</span>
             {state.currentBall ? (
-              <div
-                className={`w-28 h-28 rounded-full border-4 shadow-xl flex flex-col items-center justify-center text-white transition-transform duration-200 ${getBallColor(
-                  state.currentBall
-                )}`}
-              >
-                <span className="text-xs font-bold tracking-widest opacity-90">
-                  {formatBingoBall(state.currentBall).split('-')[0]}
-                </span>
-                <span className="text-4xl font-mono-num font-extrabold leading-none mt-0.5">
-                  {state.currentBall}
-                </span>
+              <div className="relative p-3 rounded-full baize-surface border border-amber-500/30 shadow-[inset_0_4px_14px_rgba(0,0,0,0.8)]">
+                <div
+                  className={`w-28 h-28 rounded-full border-2 lottery-ball-shine shadow-[0_14px_24px_rgba(0,0,0,0.72)] flex flex-col items-center justify-center text-white transition-transform duration-200 ${getBallColor(
+                    state.currentBall
+                  )}`}
+                >
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-b from-[#fffdf7] to-[#e6dbc5] border border-stone-400/60 shadow-inner flex flex-col items-center justify-center text-stone-900">
+                    <span className="text-[10px] font-extrabold tracking-widest leading-none text-stone-600">
+                      {formatBingoBall(state.currentBall).split('-')[0]}
+                    </span>
+                    <span className="text-2xl font-mono-num font-extrabold leading-none mt-0.5">
+                      {state.currentBall}
+                    </span>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="w-28 h-28 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center text-xs text-stone-400">
+              <div className="w-28 h-28 rounded-full border-2 border-dashed border-amber-400/30 flex items-center justify-center text-xs text-stone-400">
                 Spinning...
               </div>
             )}
 
-            <div className="w-full pt-2 border-t border-white/10">
-              <div className="text-[11px] text-stone-400 mb-2">Recent Balls</div>
-              <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="w-full pt-3 border-t border-white/10">
+              <div className="text-[11px] text-stone-400 mb-2">Walnut Ball Rail</div>
+              <div className="walnut-trim rounded-xl p-2.5 border border-amber-900/50 flex flex-wrap items-center justify-center gap-2 min-h-[46px]">
                 {recentBalls.length === 0 ? (
-                  <span className="text-xs text-stone-500">Waiting for first draw</span>
+                  <span className="text-xs text-stone-400">Waiting for first draw</span>
                 ) : (
                   recentBalls.map((b) => (
                     <span
                       key={b}
-                      className={`px-2.5 py-1 rounded-full text-xs font-mono-num font-bold text-white border ${getBallColor(
+                      className={`px-2.5 py-1 rounded-full lottery-ball-shine text-xs font-mono-num font-bold text-white border shadow-[0_3px_6px_rgba(0,0,0,0.55)] ${getBallColor(
                         b
                       )}`}
                     >
@@ -270,7 +274,7 @@ export function BingoArena({
             </div>
           </div>
 
-          <div className="bg-[#141b18] border border-white/10 rounded-2xl p-4 space-y-2.5">
+          <div className="bg-[#16120f] border border-amber-500/20 rounded-2xl p-4 space-y-2.5 shadow-xl">
             <h3 className="text-xs font-semibold text-stone-400">Table Contenders</h3>
             {Object.values(state.players).map((ps) => (
               <div key={ps.playerId} className="space-y-1">
@@ -278,11 +282,11 @@ export function BingoArena({
                   <span className="font-semibold text-[#f4f1ea]">
                     {playerNames[ps.playerId] || 'Player'}
                   </span>
-                  <span className="font-mono-num text-emerald-300">{ps.progressPct}%</span>
+                  <span className="font-mono-num text-amber-300">{ps.progressPct}%</span>
                 </div>
-                <div className="h-2 rounded-full bg-black/40 overflow-hidden">
+                <div className="h-2 rounded-full bg-black/50 border border-white/5 overflow-hidden">
                   <div
-                    className="h-full bg-emerald-500 transition-all duration-200"
+                    className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-200"
                     style={{ width: `${ps.progressPct}%` }}
                   />
                 </div>
@@ -291,70 +295,82 @@ export function BingoArena({
           </div>
         </div>
 
-        {/* Right 7 cols: Ivory 5x5 Bingo Card */}
-        <div className="lg:col-span-7 walnut-trim p-3 sm:p-5 rounded-2xl flex flex-col items-center justify-center gap-4 relative">
-          {myCardState && (
-            <div className="w-full max-w-[440px] bg-[#faf6ee] rounded-2xl p-3 sm:p-4 border-2 border-amber-900/40 shadow-2xl space-y-2">
-              <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-                {HEADERS.map((h) => (
-                  <div
-                    key={h}
-                    className="h-10 rounded-lg bg-emerald-900 text-amber-200 font-display font-extrabold text-xl flex items-center justify-center"
-                  >
-                    {h}
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-                {myCardState.card.grid.map((row, r) =>
-                  row.map((num, c) => {
-                    const isFree = r === 2 && c === 2;
-                    const daubed = myCardState.daubed[r][c];
-                    const isCalled = isFree || calledSet.has(num);
-
-                    return (
-                      <button
-                        key={`${r}-${c}`}
-                        type="button"
-                        onClick={() => handleDaub(r, c)}
-                        disabled={!isCalled || daubed || state.status !== 'playing'}
-                        className={`min-h-[54px] sm:min-h-[64px] rounded-xl border-2 font-mono-num font-bold text-lg sm:text-xl flex items-center justify-center relative transition-transform active:scale-95 ${
-                          daubed
-                            ? 'bg-rose-600 border-rose-800 text-white shadow-inner'
-                            : isCalled
-                            ? 'bg-amber-100 border-amber-500 text-stone-900 ring-2 ring-amber-400/50 cursor-pointer'
-                            : 'bg-white border-stone-300 text-stone-800 cursor-default'
-                        }`}
+        {/* Right 7 cols: Oak Tabletop -> Mahogany Tray -> Embossed Linen 5x5 Bingo Card */}
+        <div className="lg:col-span-7 wood-tabletop p-3 sm:p-5 rounded-2xl border border-amber-900/40 flex flex-col items-center justify-center gap-4 relative">
+          <div className="mahogany-frame p-3 sm:p-4 rounded-2xl w-full max-w-[490px] flex flex-col items-center gap-4">
+            <div className="baize-surface w-full rounded-xl p-3 sm:p-4 border border-emerald-950/90 flex flex-col items-center gap-4">
+              {myCardState && (
+                <div className="w-full ivory-3d rounded-2xl p-3 sm:p-4 border border-[#bda782] space-y-2">
+                  <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                    {HEADERS.map((h) => (
+                      <div
+                        key={h}
+                        className="h-10 rounded-lg bg-gradient-to-b from-[#0f5132] to-[#08301d] border border-amber-400/35 text-amber-200 font-display font-extrabold text-xl flex items-center justify-center shadow"
                       >
-                        {isFree ? (
-                          <span className="text-[11px] font-display font-extrabold tracking-tight">
-                            FREE
-                          </span>
-                        ) : (
-                          num
-                        )}
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          )}
+                        {h}
+                      </div>
+                    ))}
+                  </div>
 
-          <button
-            type="button"
-            onClick={handleClaim}
-            disabled={state.status !== 'playing'}
-            className={`w-full max-w-[440px] min-h-[50px] px-6 py-3 rounded-xl font-display font-extrabold text-lg tracking-wide flex items-center justify-center gap-2 transition-transform active:scale-98 cursor-pointer ${
-              canClaimNow
-                ? 'bg-amber-500 hover:bg-amber-400 text-stone-950 shadow-lg'
-                : 'bg-emerald-700 hover:bg-emerald-600 text-white'
-            }`}
-          >
-            <Check className="w-5 h-5" />
-            Call BINGO!
-          </button>
+                  <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                    {myCardState.card.grid.map((row, r) =>
+                      row.map((num, c) => {
+                        const isFree = r === 2 && c === 2;
+                        const daubed = myCardState.daubed[r][c];
+                        const isCalled = isFree || calledSet.has(num);
+
+                        return (
+                          <button
+                            key={`${r}-${c}`}
+                            type="button"
+                            onClick={() => handleDaub(r, c)}
+                            disabled={!isCalled || daubed || state.status !== 'playing'}
+                            className={`min-h-[54px] sm:min-h-[64px] rounded-xl border-2 font-mono-num font-bold text-lg sm:text-xl flex items-center justify-center relative transition-transform active:scale-95 ${
+                              daubed
+                                ? 'bg-[#f4ebd9] border-[#b79d76] text-stone-900 shadow-inner'
+                                : isCalled
+                                ? 'bg-amber-100 border-amber-500 text-stone-900 ring-2 ring-amber-400/60 cursor-pointer shadow'
+                                : 'bg-[#fffdf8] border-[#d7c6a9] text-stone-800 cursor-default shadow-sm'
+                            }`}
+                          >
+                            <span className={daubed ? 'relative z-10 text-white drop-shadow' : ''}>
+                              {isFree ? (
+                                <span className="text-[11px] font-display font-extrabold tracking-tight">
+                                  FREE
+                                </span>
+                              ) : (
+                                num
+                              )}
+                            </span>
+                            {daubed && (
+                              <span
+                                aria-hidden="true"
+                                className="absolute inset-1.5 rounded-full lottery-ball-shine bg-rose-600/88 border-2 border-rose-300/70 shadow-[0_4px_8px_rgba(0,0,0,0.45)]"
+                              />
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleClaim}
+                disabled={state.status !== 'playing'}
+                className={`w-full min-h-[50px] px-6 py-3 rounded-xl font-display font-extrabold text-lg tracking-wide flex items-center justify-center gap-2 transition-transform active:scale-98 cursor-pointer shadow-lg ${
+                  canClaimNow
+                    ? 'bg-amber-500 hover:bg-amber-400 text-stone-950'
+                    : 'bg-emerald-700 hover:bg-emerald-600 text-white'
+                }`}
+              >
+                <Check className="w-5 h-5" />
+                Call BINGO!
+              </button>
+            </div>
+          </div>
 
           {state.status === 'finished' && (
             <div className="absolute inset-0 bg-black/75 rounded-2xl flex items-center justify-center p-4 z-20">

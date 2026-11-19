@@ -98,6 +98,50 @@ class SoundAndVoiceEngine {
     });
   }
 
+  playUiClick() {
+    if (!this.soundEnabled) return;
+    const ctx = getCtx();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(760, now);
+      osc.frequency.exponentialRampToValueAtTime(320, now + 0.038);
+      gain.gain.setValueAtTime(0.065, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.042);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.045);
+    } catch {
+      // Ignore audio context autoplay limits
+    }
+  }
+
+  playTabNav() {
+    if (!this.soundEnabled) return;
+    const ctx = getCtx();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(480, now);
+      osc.frequency.exponentialRampToValueAtTime(720, now + 0.055);
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } catch {
+      // Ignore audio context autoplay limits
+    }
+  }
+
   speak(text: string, lang: Language = 'en', interrupt = true) {
     if (!text.trim()) return;
     this.notifySpeaking(this.voiceEnabled, text);

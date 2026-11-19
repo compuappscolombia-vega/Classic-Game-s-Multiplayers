@@ -114,11 +114,31 @@ function DieFace({ value }: { value: number }) {
     6: [[28, 24], [72, 24], [28, 50], [72, 50], [28, 76], [72, 76]],
   };
   return (
-    <svg width="44" height="44" viewBox="0 0 100 100" className="rounded-lg bg-[#faf6ee] border-2 border-stone-400 shadow">
-      {(pips[value] || []).map(([cx, cy], i) => (
-        <circle key={i} cx={cx} cy={cy} r={10} fill="#1C1917" />
-      ))}
-    </svg>
+    <div className="relative p-0.5 rounded-xl bg-gradient-to-br from-[#d9c8a9] to-[#8a7558] shadow-[0_6px_14px_rgba(0,0,0,0.65),0_2px_0_#7d684a]">
+      <svg width="48" height="48" viewBox="0 0 100 100" className="rounded-[10px] block">
+        <defs>
+          <linearGradient id="ivoryDieGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFFDF7" />
+            <stop offset="55%" stopColor="#F2E6CE" />
+            <stop offset="100%" stopColor="#D7C4A2" />
+          </linearGradient>
+          <radialGradient id="ivoryFaceBevel" cx="45%" cy="40%" r="55%">
+            <stop offset="0%" stopColor="#FFFDF9" stopOpacity="0.85" />
+            <stop offset="85%" stopColor="#E9DABF" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#B8A27E" stopOpacity="0.45" />
+          </radialGradient>
+        </defs>
+        <rect x="2" y="2" width="96" height="96" rx="20" fill="url(#ivoryDieGrad)" stroke="#C6B18D" strokeWidth="3" />
+        <circle cx="50" cy="50" r="42" fill="url(#ivoryFaceBevel)" />
+        {(pips[value] || []).map(([cx, cy], i) => (
+          <g key={i}>
+            <circle cx={cx} cy={cy + 1.5} r={10.2} fill="#FFFDF8" opacity="0.55" />
+            <circle cx={cx} cy={cy} r={9.5} fill="#1E1712" />
+            <circle cx={cx - 2} cy={cy - 2} r={3} fill="#000000" opacity="0.45" />
+          </g>
+        ))}
+      </svg>
+    </div>
   );
 }
 
@@ -310,7 +330,7 @@ export function ParquesArena({
   return (
     <div className="flex flex-col gap-3 h-full">
       {/* Header HUD */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-[#141b18] border border-white/10">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-[#16120f] border border-amber-500/20 shadow-lg">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -327,7 +347,7 @@ export function ParquesArena({
         </div>
 
         <div className="flex items-center gap-3 text-xs font-mono-num">
-          <span className="text-emerald-400 font-semibold">
+          <span className="text-amber-300 font-semibold">
             Turn: {playerNames[activePlayerId] || 'Player'}
           </span>
         </div>
@@ -335,140 +355,289 @@ export function ParquesArena({
 
       {/* Main Board + Controls Split */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start flex-1">
-        {/* 8 cols: Interactive 19x19 SVG Parqués Board */}
-        <div className="lg:col-span-8 walnut-trim p-2.5 sm:p-4 rounded-2xl flex items-center justify-center relative">
-          <div className="w-full max-w-[600px] aspect-square bg-[#F4EFE4] rounded-xl border-2 border-amber-900/60 overflow-hidden shadow-inner">
-            <svg viewBox="0 0 1900 1900" className="w-full h-full select-none">
-              {/* Corner Jails */}
-              <rect x="0" y="0" width="800" height="800" fill="#FFE4E6" stroke="#BE123C" strokeWidth="8" />
-              <rect x="1100" y="0" width="800" height="800" fill="#DBEAFE" stroke="#1D4ED8" strokeWidth="8" />
-              <rect x="1100" y="1100" width="800" height="800" fill="#FEF3C7" stroke="#B45309" strokeWidth="8" />
-              <rect x="0" y="1100" width="800" height="800" fill="#D1FAE5" stroke="#047857" strokeWidth="8" />
+        {/* 8 cols: Ultra-Definition Crafted Mahogany & Oak Parqués Board */}
+        <div className="lg:col-span-8 wood-tabletop p-3 sm:p-5 rounded-2xl border border-amber-900/40 flex items-center justify-center relative">
+          <div className="mahogany-frame p-3 sm:p-4 rounded-2xl w-full max-w-[630px]">
+            <div className="w-full aspect-square rounded-xl border-2 border-[#2a1308] overflow-hidden shadow-[inset_0_2px_10px_rgba(0,0,0,0.65)]">
+              <svg viewBox="0 0 1900 1900" className="w-full h-full select-none">
+                <defs>
+                  {/* Warm Honeyed Oak Wood Board Surface */}
+                  <linearGradient id="oakBoardBase" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#E6C994" />
+                    <stop offset="48%" stopColor="#D6AE72" />
+                    <stop offset="100%" stopColor="#BE8E4E" />
+                  </linearGradient>
+                  <pattern id="woodGrainPattern" width="120" height="120" patternUnits="userSpaceOnUse">
+                    <rect width="120" height="120" fill="none" />
+                    <path d="M0 18 Q 60 12 120 18 M0 52 Q 60 60 120 52 M0 88 Q 60 80 120 88" stroke="#6E441A" strokeWidth="2" strokeOpacity="0.12" fill="none" />
+                    <path d="M0 34 Q 60 39 120 34 M0 70 Q 60 65 120 70 M0 106 Q 60 112 120 106" stroke="#FFF3DA" strokeWidth="1.5" strokeOpacity="0.14" fill="none" />
+                  </pattern>
 
-              {/* Center Goal */}
-              <rect x="800" y="800" width="300" height="300" fill="#1C1917" stroke="#F59E0B" strokeWidth="8" />
-              <polygon points="800,800 950,950 800,1100" fill="#E11D48" opacity="0.85" />
-              <polygon points="800,800 1100,800 950,950" fill="#2563EB" opacity="0.85" />
-              <polygon points="1100,800 1100,1100 950,950" fill="#D97706" opacity="0.85" />
-              <polygon points="800,1100 1100,1100 950,950" fill="#059669" opacity="0.85" />
+                  {/* Circular Lacquered Jail Pad Gradients */}
+                  <radialGradient id="jailRed" cx="42%" cy="38%" r="60%">
+                    <stop offset="0%" stopColor="#E11D48" />
+                    <stop offset="72%" stopColor="#9F1239" />
+                    <stop offset="100%" stopColor="#650B23" />
+                  </radialGradient>
+                  <radialGradient id="jailBlue" cx="42%" cy="38%" r="60%">
+                    <stop offset="0%" stopColor="#2563EB" />
+                    <stop offset="72%" stopColor="#1E40AF" />
+                    <stop offset="100%" stopColor="#132568" />
+                  </radialGradient>
+                  <radialGradient id="jailYellow" cx="42%" cy="38%" r="60%">
+                    <stop offset="0%" stopColor="#F59E0B" />
+                    <stop offset="72%" stopColor="#B45309" />
+                    <stop offset="100%" stopColor="#713104" />
+                  </radialGradient>
+                  <radialGradient id="jailGreen" cx="42%" cy="38%" r="60%">
+                    <stop offset="0%" stopColor="#10B981" />
+                    <stop offset="72%" stopColor="#047857" />
+                    <stop offset="100%" stopColor="#024431" />
+                  </radialGradient>
 
-              {/* Home Stretches (7 squares each) */}
-              {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-                <g key={`hs-${i}`}>
-                  <rect x={(1 + i) * 100} y={900} width="100" height="100" fill="#FDA4AF" stroke="#881337" strokeWidth="3" />
-                  <rect x={900} y={(1 + i) * 100} width="100" height="100" fill="#93C5FD" stroke="#1E3A8A" strokeWidth="3" />
-                  <rect x={(17 - i) * 100} y={900} width="100" height="100" fill="#FCD34D" stroke="#78350F" strokeWidth="3" />
-                  <rect x={900} y={(17 - i) * 100} width="100" height="100" fill="#6EE7B7" stroke="#064E3B" strokeWidth="3" />
-                </g>
-              ))}
+                  {/* Glossy 3D Pawn Gradients */}
+                  <radialGradient id="pawnRed" cx="34%" cy="30%" r="68%">
+                    <stop offset="0%" stopColor="#FDA4AF" />
+                    <stop offset="28%" stopColor="#E11D48" />
+                    <stop offset="82%" stopColor="#881337" />
+                    <stop offset="100%" stopColor="#4C0519" />
+                  </radialGradient>
+                  <radialGradient id="pawnBlue" cx="34%" cy="30%" r="68%">
+                    <stop offset="0%" stopColor="#93C5FD" />
+                    <stop offset="28%" stopColor="#2563EB" />
+                    <stop offset="82%" stopColor="#1E3A8A" />
+                    <stop offset="100%" stopColor="#0F1F52" />
+                  </radialGradient>
+                  <radialGradient id="pawnYellow" cx="34%" cy="30%" r="68%">
+                    <stop offset="0%" stopColor="#FDE68A" />
+                    <stop offset="28%" stopColor="#D97706" />
+                    <stop offset="82%" stopColor="#92400E" />
+                    <stop offset="100%" stopColor="#451A03" />
+                  </radialGradient>
+                  <radialGradient id="pawnGreen" cx="34%" cy="30%" r="68%">
+                    <stop offset="0%" stopColor="#A7F3D0" />
+                    <stop offset="28%" stopColor="#059669" />
+                    <stop offset="82%" stopColor="#064E3B" />
+                    <stop offset="100%" stopColor="#022C22" />
+                  </radialGradient>
 
-              {/* 68 Outer Track Squares */}
-              {TRACK_COORDS.map(([r, c], idx) => {
-                const isSafe = SAFE_SQUARES.has(idx);
-                let fill = '#FAF6EE';
-                if (idx === 0) fill = '#FDA4AF';
-                else if (idx === 17) fill = '#93C5FD';
-                else if (idx === 34) fill = '#FCD34D';
-                else if (idx === 51) fill = '#6EE7B7';
-                else if (isSafe) fill = '#E7E5E4';
+                  <filter id="pawnShadow" x="-40%" y="-30%" width="180%" height="180%">
+                    <feDropShadow dx="4" dy="10" stdDeviation="6" floodColor="#1C0E05" floodOpacity="0.62" />
+                  </filter>
+                  <filter id="insetShadow" x="-10%" y="-10%" width="120%" height="120%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#2C1608" floodOpacity="0.45" />
+                  </filter>
+                </defs>
 
-                return (
-                  <g key={`sq-${idx}`}>
-                    <rect
-                      x={c * 100}
-                      y={r * 100}
-                      width="100"
-                      height="100"
-                      fill={fill}
-                      stroke="#78716C"
-                      strokeWidth="3"
-                    />
-                    {isSafe && (
-                      <circle cx={c * 100 + 50} cy={r * 100 + 50} r="14" fill="none" stroke="#57534E" strokeWidth="3" />
-                    )}
-                  </g>
-                );
-              })}
+                {/* Crafted Wood Backing */}
+                <rect x="0" y="0" width="1900" height="1900" fill="url(#oakBoardBase)" />
+                <rect x="0" y="0" width="1900" height="1900" fill="url(#woodGrainPattern)" />
 
-              {/* Highlighted Target Squares for Selected Pawn */}
-              {movesForSelectedPawn.map((m, idx) => {
-                const myColor = state.players.find((p) => p.playerId === localPlayer.id)?.color || 'red';
-                const [r, c] =
-                  m.toPos >= 100
-                    ? getHomeStretchCoord(myColor, m.toPos)
-                    : TRACK_COORDS[m.toPos] || [9, 9];
-                return (
-                  <g
-                    key={`target-${idx}`}
-                    onClick={() => executeMove(m)}
-                    className="cursor-pointer"
-                  >
-                    <rect
-                      x={c * 100 + 6}
-                      y={r * 100 + 6}
-                      width="88"
-                      height="88"
-                      rx="16"
-                      fill="#10B981"
-                      fillOpacity="0.38"
-                      stroke="#059669"
-                      strokeWidth="6"
-                    />
-                  </g>
-                );
-              })}
-
-              {/* Pawns */}
-              {pawnRenderList.map((pw, idx) => {
-                // Slight offset if multiple pawns share same cell
-                const sameCell = pawnRenderList.filter(
-                  (o, oIdx) => oIdx < idx && Math.abs(o.row - pw.row) < 0.2 && Math.abs(o.col - pw.col) < 0.2
-                ).length;
-                const ox = (sameCell % 2 === 0 ? -1 : 1) * (sameCell > 0 ? 14 : 0);
-                const oy = sameCell >= 2 ? 14 : 0;
-
-                const cx = pw.col * 100 + 50 + ox;
-                const cy = pw.row * 100 + 50 + oy;
-                const style = COLOR_HEX[pw.color];
-                const isSelected = selectedPawnId === pw.pawnId && pw.playerId === localPlayer.id;
-
-                return (
-                  <g
-                    key={`${pw.playerId}-${pw.pawnId}`}
-                    onClick={() => pw.canMove && handlePawnClick(pw.pawnId)}
-                    className={pw.canMove ? 'cursor-pointer' : 'cursor-default'}
-                  >
-                    {pw.canMove && (
+                {/* Corner Decorative Wood & Lacquer Inlays + Circular Jail Medallions */}
+                {[
+                  { x: 0, y: 0, cx: 360, cy: 360, fill: 'url(#jailRed)', rim: '#7F1D1D', accent: '#E11D48', coords: [[2.3, 2.3], [2.3, 4.7], [4.7, 2.3], [4.7, 4.7]] },
+                  { x: 1100, y: 0, cx: 1460, cy: 360, fill: 'url(#jailBlue)', rim: '#1E3A8A', accent: '#2563EB', coords: [[2.3, 13.3], [2.3, 15.7], [4.7, 13.3], [4.7, 15.7]] },
+                  { x: 1100, y: 1100, cx: 1460, cy: 1460, fill: 'url(#jailYellow)', rim: '#78350F', accent: '#D97706', coords: [[13.3, 13.3], [13.3, 15.7], [15.7, 13.3], [15.7, 15.7]] },
+                  { x: 0, y: 1100, cx: 360, cy: 1460, fill: 'url(#jailGreen)', rim: '#064E3B', accent: '#059669', coords: [[13.3, 2.3], [13.3, 4.7], [15.7, 2.3], [15.7, 4.7]] },
+                ].map((q, qIdx) => (
+                  <g key={`corner-${qIdx}`}>
+                    <rect x={q.x + 12} y={q.y + 12} width="776" height="776" rx="28" fill="#B58142" fillOpacity="0.32" stroke="#5A3114" strokeWidth="6" />
+                    {/* Ornate corner arabesque triangles */}
+                    <polygon points={`${q.x + 36},${q.y + 36} ${q.x + 170},${q.y + 36} ${q.x + 36},${q.y + 170}`} fill={q.accent} fillOpacity="0.72" stroke="#3D1E0A" strokeWidth="4" />
+                    <polygon points={`${q.x + 764},${q.y + 36} ${q.x + 630},${q.y + 36} ${q.x + 764},${q.y + 170}`} fill="#D97706" fillOpacity="0.65" stroke="#3D1E0A" strokeWidth="4" />
+                    <polygon points={`${q.x + 36},${q.y + 764} ${q.x + 170},${q.y + 764} ${q.x + 36},${q.y + 630}`} fill="#D97706" fillOpacity="0.65" stroke="#3D1E0A" strokeWidth="4" />
+                    <polygon points={`${q.x + 764},${q.y + 764} ${q.x + 630},${q.y + 764} ${q.x + 764},${q.y + 630}`} fill={q.accent} fillOpacity="0.72" stroke="#3D1E0A" strokeWidth="4" />
+                    {/* Circular Recessed Lacquer Medallion */}
+                    <circle cx={q.cx} cy={q.cy} r="315" fill="#46220B" />
+                    <circle cx={q.cx} cy={q.cy} r="302" fill={q.fill} stroke="#F59E0B" strokeWidth="6" filter="url(#insetShadow)" />
+                    <circle cx={q.cx} cy={q.cy} r="278" fill="none" stroke="#FFFBEB" strokeOpacity="0.22" strokeWidth="3" />
+                    {/* 4 Turned Pawn Sockets inside Jail */}
+                    {q.coords.map(([sr, sc], sIdx) => (
                       <circle
-                        cx={cx}
-                        cy={cy}
-                        r="42"
+                        key={`sock-${sIdx}`}
+                        cx={sc * 100 + 50}
+                        cy={sr * 100 + 50}
+                        r="48"
+                        fill="#1A0B04"
+                        fillOpacity="0.34"
+                        stroke="#FFFBEB"
+                        strokeOpacity="0.28"
+                        strokeWidth="3"
+                      />
+                    ))}
+                  </g>
+                ))}
+
+                {/* Center Marquetry Star Goal ("Cielo") */}
+                <g>
+                  <rect x="800" y="800" width="300" height="300" fill="#291408" stroke="#D97706" strokeWidth="8" />
+                  <polygon points="800,800 950,950 800,1100" fill="#BE123C" stroke="#FCD34D" strokeWidth="3" />
+                  <polygon points="800,800 1100,800 950,950" fill="#1D4ED8" stroke="#FCD34D" strokeWidth="3" />
+                  <polygon points="1100,800 1100,1100 950,950" fill="#D97706" stroke="#FCD34D" strokeWidth="3" />
+                  <polygon points="800,1100 1100,1100 950,950" fill="#047857" stroke="#FCD34D" strokeWidth="3" />
+                  {/* Inlaid Center Compass Star */}
+                  <polygon
+                    points="950,860 976,924 1040,950 976,976 950,1040 924,976 860,950 924,924"
+                    fill="#F59E0B"
+                    stroke="#3B1A06"
+                    strokeWidth="5"
+                  />
+                  <circle cx="950" cy="950" r="24" fill="#FFFBEB" stroke="#78350F" strokeWidth="4" />
+                </g>
+
+                {/* Stained Wood Home Stretches (7 inlaid squares each) */}
+                {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+                  <g key={`hs-${i}`}>
+                    <rect x={(1 + i) * 100} y={900} width="100" height="100" fill="#D94862" stroke="#4C1D13" strokeWidth="4" />
+                    <rect x={(1 + i) * 100 + 8} y={908} width="84" height="84" fill="none" stroke="#FFE4E6" strokeOpacity="0.32" strokeWidth="2" />
+
+                    <rect x={900} y={(1 + i) * 100} width="100" height="100" fill="#3B82F6" stroke="#1E293B" strokeWidth="4" />
+                    <rect x={908} y={(1 + i) * 100 + 8} width="84" height="84" fill="none" stroke="#DBEAFE" strokeOpacity="0.32" strokeWidth="2" />
+
+                    <rect x={(17 - i) * 100} y={900} width="100" height="100" fill="#EAB308" stroke="#4C2B08" strokeWidth="4" />
+                    <rect x={(17 - i) * 100 + 8} y={908} width="84" height="84" fill="none" stroke="#FEF3C7" strokeOpacity="0.35" strokeWidth="2" />
+
+                    <rect x={900} y={(17 - i) * 100} width="100" height="100" fill="#10B981" stroke="#063B2C" strokeWidth="4" />
+                    <rect x={908} y={(17 - i) * 100 + 8} width="84" height="84" fill="none" stroke="#D1FAE5" strokeOpacity="0.32" strokeWidth="2" />
+                  </g>
+                ))}
+
+                {/* 68 Engraved Wood Outer Track Squares */}
+                {TRACK_COORDS.map(([r, c], idx) => {
+                  const isSafe = SAFE_SQUARES.has(idx);
+                  let fill = '#EED4A3';
+                  let stroke = '#5C3818';
+                  if (idx === 0) fill = '#E11D48';
+                  else if (idx === 17) fill = '#2563EB';
+                  else if (idx === 34) fill = '#D97706';
+                  else if (idx === 51) fill = '#059669';
+                  else if (isSafe) fill = '#D4B079';
+
+                  const cx = c * 100 + 50;
+                  const cy = r * 100 + 50;
+
+                  return (
+                    <g key={`sq-${idx}`}>
+                      <rect
+                        x={c * 100}
+                        y={r * 100}
+                        width="100"
+                        height="100"
+                        fill={fill}
+                        stroke={stroke}
+                        strokeWidth="4"
+                      />
+                      <rect
+                        x={c * 100 + 6}
+                        y={r * 100 + 6}
+                        width="88"
+                        height="88"
                         fill="none"
-                        stroke={isSelected ? '#F59E0B' : '#10B981'}
+                        stroke="#FFF8EA"
+                        strokeOpacity="0.28"
+                        strokeWidth="2"
+                      />
+                      {isSafe && (
+                        <g>
+                          <circle cx={cx} cy={cy} r="22" fill="none" stroke="#5A3114" strokeWidth="3.5" strokeOpacity="0.65" />
+                          <polygon
+                            points={`${cx},${cy - 18} ${cx + 5},${cy - 5} ${cx + 18},${cy} ${cx + 5},${cy + 5} ${cx},${cy + 18} ${cx - 5},${cy + 5} ${cx - 18},${cy} ${cx - 5},${cy - 5}`}
+                            fill={idx === 0 || idx === 17 || idx === 34 || idx === 51 ? '#FFFBEB' : '#92400E'}
+                            fillOpacity="0.82"
+                          />
+                        </g>
+                      )}
+                    </g>
+                  );
+                })}
+
+                {/* Highlighted Target Squares for Selected Pawn */}
+                {movesForSelectedPawn.map((m, idx) => {
+                  const myColor = state.players.find((p) => p.playerId === localPlayer.id)?.color || 'red';
+                  const [r, c] =
+                    m.toPos >= 100
+                      ? getHomeStretchCoord(myColor, m.toPos)
+                      : TRACK_COORDS[m.toPos] || [9, 9];
+                  return (
+                    <g
+                      key={`target-${idx}`}
+                      onClick={() => executeMove(m)}
+                      className="cursor-pointer"
+                    >
+                      <rect
+                        x={c * 100 + 8}
+                        y={r * 100 + 8}
+                        width="84"
+                        height="84"
+                        rx="16"
+                        fill="#10B981"
+                        fillOpacity="0.45"
+                        stroke="#FDE047"
                         strokeWidth="7"
                       />
-                    )}
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r="31"
-                      fill={style.fill}
-                      stroke={style.stroke}
-                      strokeWidth="6"
-                    />
-                    <circle cx={cx} cy={cy} r="13" fill="#FFFFFF" fillOpacity="0.35" />
-                  </g>
-                );
-              })}
-            </svg>
+                    </g>
+                  );
+                })}
+
+                {/* 3D Turned Glossy Lacquered Pawns */}
+                {pawnRenderList.map((pw, idx) => {
+                  const sameCell = pawnRenderList.filter(
+                    (o, oIdx) => oIdx < idx && Math.abs(o.row - pw.row) < 0.2 && Math.abs(o.col - pw.col) < 0.2
+                  ).length;
+                  const ox = (sameCell % 2 === 0 ? -1 : 1) * (sameCell > 0 ? 15 : 0);
+                  const oy = sameCell >= 2 ? 15 : 0;
+
+                  const cx = pw.col * 100 + 50 + ox;
+                  const cy = pw.row * 100 + 50 + oy;
+                  const gradId =
+                    pw.color === 'red'
+                      ? 'url(#pawnRed)'
+                      : pw.color === 'blue'
+                      ? 'url(#pawnBlue)'
+                      : pw.color === 'yellow'
+                      ? 'url(#pawnYellow)'
+                      : 'url(#pawnGreen)';
+                  const isSelected = selectedPawnId === pw.pawnId && pw.playerId === localPlayer.id;
+
+                  return (
+                    <g
+                      key={`${pw.playerId}-${pw.pawnId}`}
+                      onClick={() => pw.canMove && handlePawnClick(pw.pawnId)}
+                      className={pw.canMove ? 'cursor-pointer' : 'cursor-default'}
+                    >
+                      {pw.canMove && (
+                        <circle
+                          cx={cx}
+                          cy={cy}
+                          r="45"
+                          fill="none"
+                          stroke={isSelected ? '#FACC15' : '#34D399'}
+                          strokeWidth="7"
+                        />
+                      )}
+                      {/* Base skirt with 3D cast drop shadow */}
+                      <g filter="url(#pawnShadow)">
+                        <circle cx={cx} cy={cy} r="33" fill={gradId} stroke="#1B0D06" strokeWidth="3" />
+                        {/* Turned inner collar */}
+                        <circle cx={cx} cy={cy - 2} r="22" fill="none" stroke="#FFFFFF" strokeOpacity="0.24" strokeWidth="2.5" />
+                        {/* Raised pawn head knob */}
+                        <circle cx={cx - 1} cy={cy - 4} r="17" fill={gradId} stroke="#000000" strokeOpacity="0.25" strokeWidth="2" />
+                        {/* Specular gloss highlight */}
+                        <ellipse cx={cx - 7} cy={cy - 10} rx="7" ry="4.5" transform={`rotate(-30 ${cx - 7} ${cy - 10})`} fill="#FFFFFF" fillOpacity="0.65" />
+                      </g>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
           </div>
         </div>
 
-        {/* 4 cols: Dice Tray, Legal Move Buttons & Player Standings */}
+        {/* 4 cols: Carved Tray Dice Control & Player Standings */}
         <div className="lg:col-span-4 space-y-4">
-          <div className="bg-[#141b18] border border-white/10 rounded-2xl p-4 space-y-4">
+          <div className="bg-[#16120f] border border-amber-500/20 rounded-2xl p-4 space-y-4 shadow-xl">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-[#f4f1ea]">Dice & Move Control</span>
+              <span className="text-sm font-bold text-[#f4f1ea]">Ivory Dice & Move Control</span>
               {state.dice && (
                 <span className="text-xs font-mono-num text-amber-300">
                   Remaining: {state.diceRemaining.join(', ') || 'Done'}
@@ -476,14 +645,14 @@ export function ParquesArena({
               )}
             </div>
 
-            <div className="flex items-center justify-center gap-4 py-2">
+            <div className="baize-surface rounded-xl border border-amber-900/50 flex items-center justify-center gap-5 py-4">
               {state.dice ? (
                 <>
                   <DieFace value={state.dice[0]} />
                   <DieFace value={state.dice[1]} />
                 </>
               ) : (
-                <div className="text-xs text-stone-400 py-3">Roll twin dice to begin turn</div>
+                <div className="text-xs text-emerald-100/70 py-3">Roll twin ivory dice to begin turn</div>
               )}
             </div>
 
@@ -491,7 +660,7 @@ export function ParquesArena({
               type="button"
               disabled={!isMyTurn || state.hasRolled}
               onClick={handleRoll}
-              className="w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-stone-400 text-white font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/10 disabled:text-stone-400 text-white font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg"
             >
               <Dices className="w-5 h-5" />
               {isMyTurn ? (state.hasRolled ? 'Select a highlighted pawn' : 'Roll Dice') : 'Opponent Turn'}
@@ -529,7 +698,7 @@ export function ParquesArena({
           </div>
 
           {/* Player Goal Progress */}
-          <div className="bg-[#141b18] border border-white/10 rounded-2xl p-4 space-y-2.5">
+          <div className="bg-[#16120f] border border-amber-500/20 rounded-2xl p-4 space-y-2.5 shadow-xl">
             <h3 className="text-xs font-semibold text-stone-400">Seated Players</h3>
             {state.players.map((pl) => {
               const goalCount = pl.pawns.filter((pw) => pw.pos === 107).length;
@@ -538,12 +707,12 @@ export function ParquesArena({
                 <div
                   key={pl.playerId}
                   className={`p-2.5 rounded-xl border flex items-center justify-between ${
-                    active ? 'bg-white/10 border-amber-400/45' : 'bg-black/25 border-white/8'
+                    active ? 'bg-amber-500/12 border-amber-400/50' : 'bg-black/30 border-white/8'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span
-                      className="w-3.5 h-3.5 rounded-full shrink-0"
+                      className="w-4 h-4 rounded-full shrink-0 shadow-[inset_0_2px_2px_rgba(255,255,255,0.5),0_2px_4px_rgba(0,0,0,0.6)]"
                       style={{ backgroundColor: COLOR_HEX[pl.color].fill }}
                     />
                     <span className="text-xs font-semibold text-[#f4f1ea] truncate">

@@ -25,15 +25,79 @@
   }
 }
 
+.wood-tabletop {
+  background-color: #2b1b10;
+  background-image:
+    radial-gradient(ellipse at 50% 25%, rgba(146, 98, 57, 0.22) 0%, rgba(18, 11, 7, 0.85) 80%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 224, 185, 0.025) 0px,
+      rgba(255, 224, 185, 0.025) 2px,
+      transparent 2px,
+      transparent 44px
+    ),
+    repeating-linear-gradient(
+      2deg,
+      rgba(0, 0, 0, 0.12) 0px,
+      rgba(0, 0, 0, 0.12) 1px,
+      transparent 1px,
+      transparent 7px
+    );
+}
+
+.mahogany-frame {
+  background:
+    linear-gradient(145deg, #68311b 0%, #441d0f 38%, #2c1108 75%, #4a2011 100%);
+  box-shadow:
+    inset 0 2px 3px rgba(255, 214, 170, 0.26),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.72),
+    0 24px 48px -12px rgba(0, 0, 0, 0.82),
+    0 4px 12px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(217, 152, 92, 0.28);
+}
+
 .baize-surface {
   background-color: #0b4632;
   background-image:
-    radial-gradient(ellipse at 50% 35%, rgba(22, 118, 82, 0.45) 0%, rgba(9, 44, 31, 0.92) 75%),
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.012) 0px, rgba(255, 255, 255, 0.012) 2px, transparent 2px, transparent 4px);
+    radial-gradient(ellipse at 50% 35%, rgba(28, 136, 95, 0.45) 0%, rgba(7, 42, 29, 0.94) 78%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.015) 0px, rgba(255, 255, 255, 0.015) 2px, transparent 2px, transparent 4px),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.04) 0px, rgba(0, 0, 0, 0.04) 1px, transparent 1px, transparent 3px);
+  box-shadow:
+    inset 0 4px 18px rgba(0, 0, 0, 0.7),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.07);
 }
 
 .walnut-trim {
-  background: linear-gradient(145deg, #3c2618 0%, #24150c 100%);
+  background: linear-gradient(145deg, #522918 0%, #31170c 55%, #1e0d06 100%);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 214, 170, 0.22),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.75),
+    0 20px 40px -10px rgba(0, 0, 0, 0.78);
+}
+
+.slate-chalkboard {
+  background-color: #161d1a;
+  background-image:
+    radial-gradient(ellipse at 50% 25%, rgba(44, 62, 55, 0.45) 0%, rgba(14, 19, 17, 0.96) 80%),
+    repeating-linear-gradient(12deg, rgba(255, 255, 255, 0.012) 0px, rgba(255, 255, 255, 0.012) 1px, transparent 1px, transparent 6px);
+  box-shadow:
+    inset 0 6px 20px rgba(0, 0, 0, 0.78),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.ivory-3d {
+  background: linear-gradient(155deg, #fffdf7 0%, #f4ead6 58%, #dfd0b5 100%);
+  box-shadow:
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.9),
+    inset 0 -2px 3px rgba(120, 96, 68, 0.28),
+    0 4px 0 #9f8c6e,
+    0 7px 14px rgba(0, 0, 0, 0.52);
+}
+
+.lottery-ball-shine {
+  background-image:
+    radial-gradient(circle at 30% 26%, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.18) 22%, transparent 48%),
+    radial-gradient(circle at 68% 78%, rgba(0, 0, 0, 0.48) 0%, transparent 55%);
 }
 
 @keyframes voiceBar {

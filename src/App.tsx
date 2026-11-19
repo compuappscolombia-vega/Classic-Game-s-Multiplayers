@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Bot,
   Globe,
@@ -56,7 +56,7 @@ const GAME_CATALOG: GameCatalogItem[] = [
     title: 'Parqués',
     subtitle: '68-Track · Safe Zones & Captures',
     playersLabel: '2–4 Players',
-    image: '/src/assets/images/game_parques_art_1795057509723.jpg',
+    image: '/assets/aistudio/image_2cd5d3ec.png',
     description:
       'Authentic 4-corner Colombian Parqués with twin dice, jail-break doubles, safe squares, and home-stretch captures.',
   },
@@ -79,6 +79,37 @@ const GAME_CATALOG: GameCatalogItem[] = [
       '75-ball lottery caller with animated voice announcements, Line, 4 Corners, X, and Blackout winning patterns.',
   },
 ];
+
+function useUiAudioFeedback(soundEnabled: boolean, activeTab: TabView) {
+  const prevTabRef = useRef<TabView>(activeTab);
+
+  // Play a distinct rising UI chirp when navigating between tabs
+  useEffect(() => {
+    if (prevTabRef.current !== activeTab) {
+      prevTabRef.current = activeTab;
+      if (soundEnabled) {
+        audioVoice.playTabNav();
+      }
+    }
+  }, [activeTab, soundEnabled]);
+
+  // Play a tactile short pop when clicking enabled buttons (skipping tab switches handled above)
+  useEffect(() => {
+    if (!soundEnabled) return;
+
+    const handleGlobalClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const btn = target?.closest('button, [role="button"]') as HTMLButtonElement | null;
+      if (!btn) return;
+      if (btn.disabled || btn.getAttribute('aria-disabled') === 'true') return;
+      if (btn.dataset.uiSound === 'tab') return;
+      audioVoice.playUiClick();
+    };
+
+    document.addEventListener('click', handleGlobalClick, true);
+    return () => document.removeEventListener('click', handleGlobalClick, true);
+  }, [soundEnabled]);
+}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabView>('games');
@@ -137,6 +168,8 @@ export default function App() {
     audioVoice.voiceEnabled = voiceEnabled;
     audioVoice.soundEnabled = soundEnabled;
   }, [voiceEnabled, soundEnabled]);
+
+  useUiAudioFeedback(soundEnabled, activeTab);
 
   const localPlayer = useMemo<PlayerInfo>(() => {
     if (profile) {
@@ -469,6 +502,7 @@ export default function App() {
           {/* Zone 1: Single-line Brand Wordmark */}
           <button
             type="button"
+            data-ui-sound={activeTab !== 'games' ? 'tab' : undefined}
             onClick={() => setActiveTab('games')}
             className="flex items-center gap-2.5 text-lg font-display font-extrabold tracking-tight text-[#f4f1ea] whitespace-nowrap shrink-0 cursor-pointer"
           >
@@ -494,6 +528,7 @@ export default function App() {
               <button
                 key={id}
                 type="button"
+                data-ui-sound="tab"
                 onClick={() => setActiveTab(id)}
                 className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                   activeTab === id
@@ -511,6 +546,7 @@ export default function App() {
             {profile ? (
               <button
                 type="button"
+                data-ui-sound={activeTab !== 'profile' ? 'tab' : undefined}
                 onClick={() => setActiveTab('profile')}
                 className="min-h-[40px] px-3.5 py-2 rounded-lg bg-white/8 hover:bg-white/14 border border-white/12 text-xs font-semibold text-[#f4f1ea] flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer"
               >
@@ -552,6 +588,7 @@ export default function App() {
             <button
               key={id}
               type="button"
+              data-ui-sound="tab"
               onClick={() => setActiveTab(id)}
               className={`min-h-[40px] px-3.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer ${
                 activeTab === id
@@ -619,6 +656,7 @@ export default function App() {
                 <div className="flex flex-wrap items-center gap-3 pt-1">
                   <button
                     type="button"
+                    data-ui-sound="tab"
                     onClick={() => setActiveTab('multiplayer')}
                     className="min-h-[46px] px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold flex items-center gap-2 cursor-pointer"
                   >
