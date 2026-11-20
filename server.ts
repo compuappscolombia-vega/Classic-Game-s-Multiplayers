@@ -7,6 +7,8 @@ import crypto from 'node:crypto';
 import { WebSocketServer, WebSocket } from 'ws';
 import type {
   AhorcadoCategory,
+  BarcosOrientation,
+  BarcosShipId,
   BingoPattern,
   ChatMessage,
   ClientWsMessage,
@@ -45,6 +47,14 @@ import {
   createChessGame,
   resignChessGame,
 } from './src/shared/chessEngine.ts';
+import {
+  confirmBarcosFleet,
+  createBarcosGame,
+  fireBarcosShot,
+  placeBarcosShip,
+  randomizeBarcosFleet,
+  sanitizeBarcosForPlayer,
+} from './src/shared/barcosEngine.ts';
 
 const PORT = Number(process.env.PORT || 3000);
 const IS_PROD = process.env.NODE_ENV === 'production';
@@ -140,6 +150,9 @@ function sanitizeRoomForViewer(room: RoomState, viewerId: string): RoomState {
   }
   if (room.ajedrez) {
     copy.ajedrez = room.ajedrez;
+  }
+  if (room.barcos) {
+    copy.barcos = sanitizeBarcosForPlayer(room.barcos, viewerId);
   }
   return copy;
 }
@@ -250,6 +263,7 @@ function startRoomGame(
   room.ahorcado = undefined;
   room.bingo = undefined;
   room.ajedrez = undefined;
+  room.barcos = undefined;
   stopBingoTimer(room.id);
 
   if (room.game === 'domino') {
@@ -272,6 +286,8 @@ function startRoomGame(
       playerIds[1],
       playerNames[playerIds[0]] || 'White'
     );
+  } else if (room.game === 'barcos') {
+    room.barcos = createBarcosGame([playerIds[0], playerIds[1]], playerNames);
   }
 
   broadcastRoomState(room);
@@ -370,6 +386,44 @@ function handleGameAction(
       room.ajedrez = resignChessGame(room.ajedrez, pid, pname);
     }
     if (room.ajedrez.status !== 'playing') {
+      room.status = 'finished';
+      broadcastAll({ type: 'rooms_list', rooms: getRoomSummaries() });
+    }
+    broadcastRoomState(room);
+    return;
+  }
+
+  if (room.game === 'barcos' && room.barcos) {
+    if (
+      action.kind === 'place_ship' &&
+      typeof action.shipId === 'string' &&
+      typeof action.row === 'number' &&
+      typeof action.col === 'number'
+    ) {
+      const validShips: BarcosShipId[] = ['carrier', 'battleship', 'cruiser', 'submarine', 'destroyer'];
+      if (validShips.includes(action.shipId as BarcosShipId)) {
+        const orientation: BarcosOrientation = action.orientation === 'V' ? 'V' : 'H';
+        room.barcos = placeBarcosShip(
+          room.barcos,
+          pid,
+          action.shipId as BarcosShipId,
+          action.row,
+          action.col,
+          orientation
+        );
+      }
+    } else if (action.kind === 'randomize') {
+      room.barcos = randomizeBarcosFleet(room.barcos, pid);
+    } else if (action.kind === 'ready_fleet') {
+      room.barcos = confirmBarcosFleet(room.barcos, pid, pname);
+    } else if (
+      action.kind === 'fire' &&
+      typeof action.row === 'number' &&
+      typeof action.col === 'number'
+    ) {
+      room.barcos = fireBarcosShot(room.barcos, pid, action.row, action.col, pname);
+    }
+    if (room.barcos.phase === 'finished') {
       room.status = 'finished';
       broadcastAll({ type: 'rooms_list', rooms: getRoomSummaries() });
     }
@@ -500,7 +554,7 @@ async function bootstrap() {
         const roomId = makeId('room');
         const code = makeRoomCode();
         const maxPlayers =
-          msg.game === 'ajedrez'
+          msg.game === 'ajedrez' || msg.game === 'barcos'
             ? 2
             : Math.min(Math.max(Number(msg.maxPlayers) || 4, 2), 4);
         const room: RoomState = {

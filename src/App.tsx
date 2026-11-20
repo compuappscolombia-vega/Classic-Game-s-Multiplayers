@@ -33,6 +33,7 @@ import { ParquesArena } from './games/ParquesArena.tsx';
 import { AhorcadoArena } from './games/AhorcadoArena.tsx';
 import { BingoArena } from './games/BingoArena.tsx';
 import { AjedrezArena } from './games/AjedrezArena.tsx';
+import { BarcosArena } from './games/BarcosArena.tsx';
 import {
   applyMatchToMissions,
   getDailyMissionsForDate,
@@ -98,6 +99,15 @@ const GAME_CATALOG: GameCatalogItem[] = [
     image: '/src/assets/images/ajedrez_arthur_3d_hd_1795142216122.jpg',
     description:
       'Compete head-to-head online or challenge Arthur, a world-champion AI who adapts to your style across 5 difficulty tiers.',
+  },
+  {
+    id: 'barcos',
+    title: 'Barcos de Guerra',
+    subtitle: '10×10 Naval Radar · Fleet Duel',
+    playersLabel: '1–2 Players',
+    image: '/src/assets/images/barcos_3d_hd_1795149302254.jpg',
+    description:
+      'Deploy your 5-warship armada, hunt hidden enemy vessels across the 10×10 oceanic grid, and sink the rival fleet online or against Admiral AI.',
   },
 ];
 
@@ -168,6 +178,7 @@ export default function App() {
   // Profile edit state
   const [editName, setEditName] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
+  const [cloudSyncNotice, setCloudSyncNotice] = useState<string | null>(null);
 
   // Daily Missions state
   const todayKey = useMemo(() => getTodayDateKey(), []);
@@ -209,18 +220,30 @@ export default function App() {
     const unsub = subscribeAuth(async (user) => {
       if (!user) {
         setProfile(null);
+        setCloudSyncNotice(null);
         return;
       }
       try {
-        const loaded = await ensureAndLoadUserProfile(user);
+        const { profile: loaded, syncWarning } = await ensureAndLoadUserProfile(user);
         setProfile(loaded);
-        setVoiceEnabled(loaded.voiceEnabled);
-        setSoundEnabled(loaded.soundEnabled);
-        setMusicEnabled(loaded.musicEnabled);
-        setLanguage(loaded.language);
+        setCloudSyncNotice(syncWarning);
+        if (!syncWarning) {
+          setVoiceEnabled(loaded.voiceEnabled);
+          setSoundEnabled(loaded.soundEnabled);
+          setMusicEnabled(loaded.musicEnabled);
+          setLanguage(loaded.language);
+        }
         setEditName(loaded.displayName);
-        const syncedMissions = await loadOrInitDailyMissions(loaded.uid, todayKey);
-        setMissions(syncedMissions);
+
+        try {
+          const syncedMissions = await loadOrInitDailyMissions(loaded.uid, todayKey);
+          setMissions(syncedMissions);
+        } catch (missionErr) {
+          console.warn(
+            'Daily missions cloud sync skipped:',
+            missionErr instanceof Error ? missionErr.message : missionErr
+          );
+        }
       } catch (err) {
         console.warn('Profile sync skipped:', err instanceof Error ? err.message : err);
       }
@@ -399,7 +422,7 @@ export default function App() {
     socket.createRoom(
       `${localPlayer.name}'s ${game.toUpperCase()}`,
       game,
-      game === 'ajedrez' ? 2 : 4,
+      game === 'ajedrez' || game === 'barcos' ? 2 : 4,
       false
     );
   };
@@ -517,6 +540,20 @@ export default function App() {
                 onOnlineAction={(action) => socket.sendGameAction(room.id, action)}
                 onMatchFinished={(outcome, score) =>
                   void handleMatchFinished('ajedrez', 'online', outcome, score)
+                }
+                onExit={() => socket.leaveRoom(room.id)}
+              />
+            )}
+            {room.game === 'barcos' && (
+              <BarcosArena
+                mode="online"
+                language={language}
+                localPlayer={localPlayer}
+                players={room.players}
+                onlineState={room.barcos}
+                onOnlineAction={(action) => socket.sendGameAction(room.id, action)}
+                onMatchFinished={(outcome, score) =>
+                  void handleMatchFinished('barcos', 'online', outcome, score)
                 }
                 onExit={() => socket.leaveRoom(room.id)}
               />
@@ -656,6 +693,18 @@ export default function App() {
               players={[localPlayer]}
               onMatchFinished={(outcome, score) =>
                 void handleMatchFinished('ajedrez', 'ai', outcome, score)
+              }
+              onExit={() => setActiveAiGame(null)}
+            />
+          )}
+          {activeAiGame === 'barcos' && (
+            <BarcosArena
+              mode="ai"
+              language={language}
+              localPlayer={localPlayer}
+              players={[localPlayer]}
+              onMatchFinished={(outcome, score) =>
+                void handleMatchFinished('barcos', 'ai', outcome, score)
               }
               onExit={() => setActiveAiGame(null)}
             />
@@ -830,7 +879,7 @@ export default function App() {
                     Classic Tabletop Rivals, Crafted in Realistic Depth
                   </h1>
                   <p className="text-sm sm:text-base text-stone-200 max-w-xl leading-relaxed">
-                    Compete across Dominó, Parqués, Ahorcado, Bingo 75, and Ajedrez in real time or challenge Arthur GM offline with dedicated music for every table.
+                    Compete across Dominó, Parqués, Ahorcado, Bingo 75, Ajedrez, and Barcos de Guerra in real time or challenge AI opponents offline with dedicated music for every table.
                   </p>
 
                   <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -860,13 +909,13 @@ export default function App() {
               </div>
             </section>
 
-            {/* 5-Game 3D Realistic Showcase Grid */}
+            {/* 6-Game 3D Realistic Showcase Grid */}
             <section className="space-y-4">
               <div className="flex items-baseline justify-between">
                 <h2 className="text-xl sm:text-2xl font-display font-bold text-[#f4f1ea]">
                   Choose Your Table
                 </h2>
-                <span className="text-xs text-stone-400">5 Full-HD Tables</span>
+                <span className="text-xs text-stone-400">6 Full-HD Tables</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -1010,13 +1059,20 @@ export default function App() {
               )}
             </div>
 
+            {cloudSyncNotice && profile && (
+              <div className="p-3.5 rounded-xl bg-amber-500/12 border border-amber-400/30 text-xs text-amber-200 leading-relaxed">
+                {cloudSyncNotice}
+              </div>
+            )}
+
             {profile && (
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {[
                   ['Total Wins', `${profile.totalWins}/${profile.totalGames}`],
                   ['Dominó Wins', String(profile.dominoWins)],
                   ['Parqués Wins', String(profile.parquesWins)],
                   ['Ajedrez Wins', String(profile.ajedrezWins)],
+                  ['Barcos Wins', String(profile.barcosWins)],
                   ['Ahorcado + Bingo', String(profile.ahorcadoWins + profile.bingoWins)],
                 ].map(([label, val]) => (
                   <div key={label} className="p-3.5 rounded-xl bg-[#0e1412] border border-white/8">
@@ -1072,6 +1128,7 @@ export default function App() {
 
       <AuthModal
         open={authModalOpen}
+        language={language}
         onClose={() => setAuthModalOpen(false)}
         onSignedIn={() => {
           audioVoice.speak(

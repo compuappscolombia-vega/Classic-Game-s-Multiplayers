@@ -51,6 +51,9 @@
         "ajedrezWins": {
           "type": "number"
         },
+        "barcosWins": {
+          "type": "number"
+        },
         "voiceEnabled": {
           "type": "boolean"
         },
@@ -153,7 +156,7 @@
         },
         "favoriteGame": {
           "type": "string",
-          "enum": ["domino", "parques", "ahorcado", "bingo", "ajedrez"]
+          "enum": ["domino", "parques", "ahorcado", "bingo", "ajedrez", "barcos"]
         },
         "updatedAt": {
           "type": "string",
@@ -191,7 +194,7 @@
         },
         "game": {
           "type": "string",
-          "enum": ["domino", "parques", "ahorcado", "bingo", "ajedrez"]
+          "enum": ["domino", "parques", "ahorcado", "bingo", "ajedrez", "barcos"]
         },
         "mode": {
           "type": "string",

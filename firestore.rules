@@ -13,10 +13,6 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isVerified() {
-      return isSignedIn() && request.auth.token.email_verified == true;
-    }
-
     function isValidId(id) {
       return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
@@ -44,7 +40,7 @@ service cloud.firestore {
       && data.keys().hasOnly([
         'uid', 'displayName', 'photoURL', 'provider', 'elo',
         'totalWins', 'totalGames', 'winStreak',
-        'dominoWins', 'parquesWins', 'ahorcadoWins', 'bingoWins', 'ajedrezWins',
+        'dominoWins', 'parquesWins', 'ahorcadoWins', 'bingoWins', 'ajedrezWins', 'barcosWins',
         'voiceEnabled', 'soundEnabled', 'musicEnabled', 'language', 'createdAt', 'updatedAt'
       ])
       && data.uid is string && data.uid == request.auth.uid && data.uid == userId
@@ -60,6 +56,7 @@ service cloud.firestore {
       && data.ahorcadoWins is number && data.ahorcadoWins >= 0
       && data.bingoWins is number && data.bingoWins >= 0
       && (!('ajedrezWins' in data) || (data.ajedrezWins is number && data.ajedrezWins >= 0))
+      && (!('barcosWins' in data) || (data.barcosWins is number && data.barcosWins >= 0))
       && data.voiceEnabled is bool
       && data.soundEnabled is bool
       && (!('musicEnabled' in data) || data.musicEnabled is bool)
@@ -93,7 +90,7 @@ service cloud.firestore {
       && data.totalWins is number && data.totalWins >= 0
       && data.totalGames is number && data.totalGames >= data.totalWins
       && data.winStreak is number && data.winStreak >= 0 && data.winStreak <= data.totalWins
-      && data.favoriteGame in ['domino', 'parques', 'ahorcado', 'bingo', 'ajedrez']
+      && data.favoriteGame in ['domino', 'parques', 'ahorcado', 'bingo', 'ajedrez', 'barcos']
       && data.updatedAt is timestamp;
     }
 
@@ -102,7 +99,7 @@ service cloud.firestore {
       && data.keys().hasOnly(['id', 'uid', 'game', 'mode', 'outcome', 'score', 'eloDelta', 'createdAt'])
       && data.id is string && data.id == matchId
       && data.uid is string && data.uid == request.auth.uid && data.uid == userId
-      && data.game in ['domino', 'parques', 'ahorcado', 'bingo', 'ajedrez']
+      && data.game in ['domino', 'parques', 'ahorcado', 'bingo', 'ajedrez', 'barcos']
       && data.mode in ['online', 'ai']
       && data.outcome in ['win', 'loss', 'draw']
       && data.score is number && data.score >= 0 && data.score <= 100000
@@ -145,11 +142,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isValidId(userId) && isOwner(userId);
       allow list: if false;
-      allow create: if isValidId(userId) && isVerified() && isOwner(userId)
+      allow create: if isValidId(userId) && isSignedIn() && isOwner(userId)
         && isValidUserProfile(incoming(), userId)
         && incoming().createdAt == request.time
         && incoming().updatedAt == request.time;
-      allow update: if isValidId(userId) && isVerified() && isOwner(userId)
+      allow update: if isValidId(userId) && isSignedIn() && isOwner(userId)
         && isValidUserProfile(incoming(), userId)
         && incoming().uid == existing().uid
         && incoming().provider == existing().provider
@@ -163,7 +160,7 @@ service cloud.firestore {
           (
             incoming().diff(existing()).affectedKeys().hasOnly([
               'elo', 'totalWins', 'totalGames', 'winStreak',
-              'dominoWins', 'parquesWins', 'ahorcadoWins', 'bingoWins', 'ajedrezWins', 'updatedAt'
+              'dominoWins', 'parquesWins', 'ahorcadoWins', 'bingoWins', 'ajedrezWins', 'barcosWins', 'updatedAt'
             ])
             && incoming().elo - existing().elo <= 100
             && existing().elo - incoming().elo <= 100
@@ -186,11 +183,11 @@ service cloud.firestore {
       match /private/{docId} {
         allow get: if isValidId(userId) && isValidId(docId) && isOwner(userId);
         allow list: if false;
-        allow create: if isValidId(userId) && isValidId(docId) && isVerified() && isOwner(userId)
+        allow create: if isValidId(userId) && isValidId(docId) && isSignedIn() && isOwner(userId)
           && docId == 'info'
           && isValidPrivateInfo(incoming(), userId)
           && incoming().updatedAt == request.time;
-        allow update: if isValidId(userId) && isValidId(docId) && isVerified() && isOwner(userId)
+        allow update: if isValidId(userId) && isValidId(docId) && isSignedIn() && isOwner(userId)
           && docId == 'info'
           && isValidPrivateInfo(incoming(), userId)
           && incoming().uid == existing().uid
@@ -203,7 +200,7 @@ service cloud.firestore {
       match /matches/{matchId} {
         allow get: if isValidId(userId) && isValidId(matchId) && isOwner(userId);
         allow list: if isValidId(userId) && isOwner(userId) && resource.data.uid == request.auth.uid;
-        allow create: if isValidId(userId) && isValidId(matchId) && isVerified() && isOwner(userId)
+        allow create: if isValidId(userId) && isValidId(matchId) && isSignedIn() && isOwner(userId)
           && isValidMatchRecord(incoming(), userId, matchId)
           && incoming().createdAt == request.time;
         allow update, delete: if false;
@@ -213,10 +210,10 @@ service cloud.firestore {
       match /missions/{dateKey} {
         allow get: if isValidId(userId) && isValidId(dateKey) && isOwner(userId);
         allow list: if false;
-        allow create: if isValidId(userId) && isValidId(dateKey) && isVerified() && isOwner(userId)
+        allow create: if isValidId(userId) && isValidId(dateKey) && isSignedIn() && isOwner(userId)
           && isValidDailyMissionState(incoming(), userId, dateKey)
           && incoming().updatedAt == request.time;
-        allow update: if isValidId(userId) && isValidId(dateKey) && isVerified() && isOwner(userId)
+        allow update: if isValidId(userId) && isValidId(dateKey) && isSignedIn() && isOwner(userId)
           && isValidDailyMissionState(incoming(), userId, dateKey)
           && incoming().uid == existing().uid
           && incoming().dateKey == existing().dateKey
@@ -229,11 +226,11 @@ service cloud.firestore {
     match /leaderboard/{entryId} {
       allow get: if isValidId(entryId) && isSignedIn();
       allow list: if isSignedIn() && resource.data.elo >= 0;
-      allow create: if isValidId(entryId) && isVerified() && isOwner(entryId)
+      allow create: if isValidId(entryId) && isSignedIn() && isOwner(entryId)
         && isValidLeaderboardEntry(incoming(), entryId)
         && incoming().updatedAt == request.time
         && existsAfter(/databases/$(database)/documents/users/$(request.auth.uid));
-      allow update: if isValidId(entryId) && isVerified() && isOwner(entryId)
+      allow update: if isValidId(entryId) && isSignedIn() && isOwner(entryId)
         && isValidLeaderboardEntry(incoming(), entryId)
         && incoming().uid == existing().uid
         && incoming().updatedAt == request.time

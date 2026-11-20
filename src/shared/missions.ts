@@ -47,6 +47,15 @@ export const MISSION_CATALOG: DailyMissionDef[] = [
     rewardElo: 30,
   },
   {
+    id: 'win_barcos_1',
+    titleEn: 'Win 1 naval battle of Barcos de Guerra',
+    titleEs: 'Gana 1 batalla de Barcos de Guerra',
+    game: 'barcos',
+    kind: 'win',
+    target: 1,
+    rewardElo: 30,
+  },
+  {
     id: 'play_any_3',
     titleEn: 'Complete 3 salon matches',
     titleEs: 'Completa 3 partidas en el salón',

@@ -60,11 +60,11 @@ export interface FirestoreErrorInfo {
   };
 }
 
-export function handleFirestoreError(
+function buildFirestoreErrorJson(
   error: unknown,
   operationType: OperationTypeValue,
   path: string | null
-): never {
+): string {
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
@@ -82,8 +82,17 @@ export function handleFirestoreError(
     operationType,
     path,
   };
-  console.error('Firestore Error:', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  return JSON.stringify(errInfo);
+}
+
+export function handleFirestoreError(
+  error: unknown,
+  operationType: OperationTypeValue,
+  path: string | null
+): never {
+  const json = buildFirestoreErrorJson(error, operationType, path);
+  console.error('Firestore Error:', json);
+  throw new Error(json);
 }
 
 async function testConnection() {
@@ -111,6 +120,7 @@ export interface UserProfile {
   ahorcadoWins: number;
   bingoWins: number;
   ajedrezWins: number;
+  barcosWins: number;
   voiceEnabled: boolean;
   soundEnabled: boolean;
   musicEnabled: boolean;
@@ -139,8 +149,88 @@ export interface MatchHistoryRecord {
   createdAtMs: number;
 }
 
+export interface FormattedAuthError {
+  code: string;
+  message: string;
+  actionHint?: 'popup_blocked' | 'unauthorized_domain' | 'operation_not_allowed';
+}
+
+export function formatFirebaseAuthError(
+  err: unknown,
+  language: Language = 'es',
+  providerName: 'Google' | 'Apple' = 'Google'
+): FormattedAuthError {
+  const code = (err as { code?: string })?.code || '';
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isEs = language === 'es';
+
+  switch (code) {
+    case 'auth/popup-blocked':
+      return {
+        code,
+        actionHint: 'popup_blocked',
+        message: isEs
+          ? 'Tu navegador bloqueó la ventana emergente de acceso. Permite popups para este sitio o abre el salón en una pestaña nueva.'
+          : 'Your browser blocked the sign-in popup. Allow popups for this site or open the app in a new tab.',
+      };
+    case 'auth/popup-closed-by-user':
+    case 'auth/cancelled-popup-request':
+      return {
+        code,
+        message: isEs
+          ? `Se cerró la ventana de ${providerName} antes de completar el inicio de sesión.`
+          : `The ${providerName} sign-in window was closed before completing login.`,
+      };
+    case 'auth/unauthorized-domain':
+      return {
+        code,
+        actionHint: 'unauthorized_domain',
+        message: isEs
+          ? `El dominio "${hostname}" no está autorizado en Firebase Authentication. Agrégalo en Firebase Console → Authentication → Settings → Authorized domains.`
+          : `Domain "${hostname}" is not authorized in Firebase Authentication. Add it in Firebase Console → Authentication → Settings → Authorized domains.`,
+      };
+    case 'auth/operation-not-allowed':
+      return {
+        code,
+        actionHint: 'operation_not_allowed',
+        message: isEs
+          ? `El proveedor ${providerName} no está habilitado en Firebase Console → Authentication → Sign-in method.`
+          : `${providerName} sign-in is not enabled in Firebase Console → Authentication → Sign-in method.`,
+      };
+    case 'auth/network-request-failed':
+      return {
+        code,
+        message: isEs
+          ? 'No se pudo conectar con Google por un problema de red. Verifica tu conexión e intenta nuevamente.'
+          : 'Network error while connecting to Google. Check your connection and try again.',
+      };
+    case 'auth/internal-error':
+    case 'auth/web-storage-unsupported':
+      return {
+        code,
+        actionHint: 'popup_blocked',
+        message: isEs
+          ? 'El navegador o iframe restringió las cookies/almacenamiento de sesión. Abre la app en una pestaña nueva o habilita cookies de terceros.'
+          : 'Your browser or iframe blocked session storage/cookies. Open the app in a new tab or allow third-party cookies.',
+      };
+    default: {
+      const raw = err instanceof Error ? err.message : String(err || '');
+      return {
+        code,
+        message:
+          raw ||
+          (isEs
+            ? `No se pudo iniciar sesión con ${providerName}.`
+            : `${providerName} sign-in failed.`),
+      };
+    }
+  }
+}
+
 export async function signInWithGoogle(): Promise<User> {
   const provider = new GoogleAuthProvider();
+  provider.addScope('profile');
+  provider.addScope('email');
   provider.setCustomParameters({ prompt: 'select_account' });
   const cred = await signInWithPopup(auth, provider);
   return cred.user;
@@ -169,34 +259,68 @@ function inferFavoriteGame(profile: UserProfile): GameType {
     ['ahorcado', profile.ahorcadoWins],
     ['bingo', profile.bingoWins],
     ['ajedrez', profile.ajedrezWins],
+    ['barcos', profile.barcosWins],
   ];
   counts.sort((a, b) => b[1] - a[1]);
   return counts[0][0];
 }
 
-export async function ensureAndLoadUserProfile(user: User): Promise<UserProfile> {
+export function buildFallbackUserProfile(user: User): UserProfile {
+  const providerId = user.providerData?.[0]?.providerId || 'google.com';
+  const provider: 'google' | 'apple' = providerId.includes('apple') ? 'apple' : 'google';
+  const cleanName =
+    (user.displayName || user.email?.split('@')[0] || 'Player').trim().slice(0, 40) || 'Player';
+  const cleanPhoto = (user.photoURL || '').slice(0, 500);
+
+  return {
+    uid: user.uid,
+    displayName: cleanName,
+    photoURL: cleanPhoto,
+    provider,
+    elo: 1000,
+    totalWins: 0,
+    totalGames: 0,
+    winStreak: 0,
+    dominoWins: 0,
+    parquesWins: 0,
+    ahorcadoWins: 0,
+    bingoWins: 0,
+    ajedrezWins: 0,
+    barcosWins: 0,
+    voiceEnabled: true,
+    soundEnabled: true,
+    musicEnabled: true,
+    language: 'es',
+  };
+}
+
+export async function ensureAndLoadUserProfile(
+  user: User
+): Promise<{ profile: UserProfile; syncWarning: string | null }> {
   const userRef = doc(db, 'users', user.uid);
   const privateRef = doc(db, 'users', user.uid, 'private', 'info');
   const lbRef = doc(db, 'leaderboard', user.uid);
+
+  const fallback = buildFallbackUserProfile(user);
+  const providerId = user.providerData?.[0]?.providerId || 'google.com';
 
   let snap;
   try {
     snap = await getDoc(userRef);
   } catch (err) {
-    handleFirestoreError(err, OperationType.GET, `users/${user.uid}`);
+    console.error('Firestore Error:', buildFirestoreErrorJson(err, OperationType.GET, `users/${user.uid}`));
+    return {
+      profile: fallback,
+      syncWarning: 'Google session connected locally; Firestore cloud sync requires published security rules.',
+    };
   }
-
-  const providerId = user.providerData?.[0]?.providerId || 'google.com';
-  const provider: 'google' | 'apple' = providerId.includes('apple') ? 'apple' : 'google';
-  const cleanName = (user.displayName || user.email?.split('@')[0] || 'Player').trim().slice(0, 40) || 'Player';
-  const cleanPhoto = (user.photoURL || '').slice(0, 500);
 
   if (snap.exists()) {
     const data = snap.data();
     const profile: UserProfile = {
       uid: user.uid,
-      displayName: String(data.displayName || cleanName).slice(0, 40),
-      photoURL: String(data.photoURL || cleanPhoto).slice(0, 500),
+      displayName: String(data.displayName || fallback.displayName).slice(0, 40),
+      photoURL: String(data.photoURL || fallback.photoURL).slice(0, 500),
       provider: data.provider === 'apple' ? 'apple' : 'google',
       elo: Number(data.elo ?? 1000),
       totalWins: Number(data.totalWins ?? 0),
@@ -207,12 +331,14 @@ export async function ensureAndLoadUserProfile(user: User): Promise<UserProfile>
       ahorcadoWins: Number(data.ahorcadoWins ?? 0),
       bingoWins: Number(data.bingoWins ?? 0),
       ajedrezWins: Number(data.ajedrezWins ?? 0),
+      barcosWins: Number(data.barcosWins ?? 0),
       voiceEnabled: Boolean(data.voiceEnabled ?? true),
       soundEnabled: Boolean(data.soundEnabled ?? true),
       musicEnabled: Boolean(data.musicEnabled ?? true),
       language: data.language === 'es' ? 'es' : 'en',
     };
 
+    let syncWarning: string | null = null;
     try {
       const lbSnap = await getDoc(lbRef);
       if (!lbSnap.exists()) {
@@ -229,36 +355,17 @@ export async function ensureAndLoadUserProfile(user: User): Promise<UserProfile>
         });
       }
     } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, `leaderboard/${user.uid}`);
+      console.error('Firestore Error:', buildFirestoreErrorJson(err, OperationType.WRITE, `leaderboard/${user.uid}`));
+      syncWarning = 'Profile loaded, but leaderboard sync requires updated Firestore rules.';
     }
 
-    return profile;
+    return { profile, syncWarning };
   }
-
-  const initialProfile: UserProfile = {
-    uid: user.uid,
-    displayName: cleanName,
-    photoURL: cleanPhoto,
-    provider,
-    elo: 1000,
-    totalWins: 0,
-    totalGames: 0,
-    winStreak: 0,
-    dominoWins: 0,
-    parquesWins: 0,
-    ahorcadoWins: 0,
-    bingoWins: 0,
-    ajedrezWins: 0,
-    voiceEnabled: true,
-    soundEnabled: true,
-    musicEnabled: true,
-    language: 'en',
-  };
 
   try {
     const batch = writeBatch(db);
     batch.set(userRef, {
-      ...initialProfile,
+      ...fallback,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -270,9 +377,9 @@ export async function ensureAndLoadUserProfile(user: User): Promise<UserProfile>
     });
     batch.set(lbRef, {
       uid: user.uid,
-      displayName: initialProfile.displayName,
-      photoURL: initialProfile.photoURL,
-      elo: initialProfile.elo,
+      displayName: fallback.displayName,
+      photoURL: fallback.photoURL,
+      elo: fallback.elo,
       totalWins: 0,
       totalGames: 0,
       winStreak: 0,
@@ -280,11 +387,14 @@ export async function ensureAndLoadUserProfile(user: User): Promise<UserProfile>
       updatedAt: serverTimestamp(),
     });
     await batch.commit();
+    return { profile: fallback, syncWarning: null };
   } catch (err) {
-    handleFirestoreError(err, OperationType.CREATE, `users/${user.uid}`);
+    console.error('Firestore Error:', buildFirestoreErrorJson(err, OperationType.CREATE, `users/${user.uid}`));
+    return {
+      profile: fallback,
+      syncWarning: 'Google session connected locally; publish Firestore rules to enable cloud save.',
+    };
   }
-
-  return initialProfile;
 }
 
 export async function updateUserPreferences(
@@ -348,6 +458,7 @@ export async function recordMatchOutcome(
     ahorcadoWins: profile.ahorcadoWins + (isWin && params.game === 'ahorcado' ? 1 : 0),
     bingoWins: profile.bingoWins + (isWin && params.game === 'bingo' ? 1 : 0),
     ajedrezWins: profile.ajedrezWins + (isWin && params.game === 'ajedrez' ? 1 : 0),
+    barcosWins: profile.barcosWins + (isWin && params.game === 'barcos' ? 1 : 0),
   };
 
   const matchId = `m_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -367,6 +478,7 @@ export async function recordMatchOutcome(
       ahorcadoWins: nextProfile.ahorcadoWins,
       bingoWins: nextProfile.bingoWins,
       ajedrezWins: nextProfile.ajedrezWins,
+      barcosWins: nextProfile.barcosWins,
       updatedAt: serverTimestamp(),
     });
     batch.update(lbRef, {

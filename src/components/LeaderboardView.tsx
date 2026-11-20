@@ -20,6 +20,7 @@ const GAME_NAME: Record<GameType, string> = {
   ahorcado: 'Ahorcado',
   bingo: 'Bingo',
   ajedrez: 'Ajedrez',
+  barcos: 'Barcos de Guerra',
 };
 
 export function LeaderboardView({ profile, onOpenAuth }: LeaderboardViewProps) {

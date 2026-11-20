@@ -124,6 +124,22 @@ const MUSIC_TRACKS: Record<MusicTheme, MusicTrackSpec> = {
     waveform: 'sawtooth',
     leadWave: 'triangle',
   },
+  barcos: {
+    stepMs: 295,
+    labelEn: 'Naval Command March',
+    labelEs: 'Marcha Naval Táctica',
+    bassFreqs: [110.0, 0, 110.0, 164.81, 130.81, 0, 146.83, 0, 110.0, 0, 98.0, 0, 82.41, 0, 98.0, 123.47],
+    leadFreqs: [440.0, 0, 523.25, 659.25, 587.33, 523.25, 440.0, 0, 392.0, 440.0, 523.25, 659.25, 783.99, 0, 659.25, 0],
+    padChords: [
+      [110.0, 164.81, 220.0, 261.63],
+      [130.81, 196.0, 261.63, 329.63],
+      [146.83, 220.0, 293.66, 349.23],
+      [164.81, 246.94, 329.63, 392.0],
+    ],
+    waveform: 'triangle',
+    leadWave: 'sawtooth',
+    percussionEvery: 2,
+  },
 };
 
 class SoundAndVoiceEngine {
@@ -369,6 +385,19 @@ class SoundAndVoiceEngine {
   playBingoPop() {
     this.playTone(460, 0.08, 'sine', 0.12);
     setTimeout(() => this.playTone(690, 0.12, 'triangle', 0.12), 60);
+  }
+
+  playTorpedoSplash() {
+    this.playTone(360, 0.09, 'sine', 0.09);
+    setTimeout(() => this.playTone(210, 0.14, 'sine', 0.08), 65);
+  }
+
+  playNavalExplosion(sunk: boolean) {
+    this.playTone(150, 0.2, 'sawtooth', 0.15);
+    setTimeout(() => this.playTone(90, 0.26, 'triangle', 0.17), 60);
+    if (sunk) {
+      setTimeout(() => this.playTone(68, 0.34, 'sawtooth', 0.18), 160);
+    }
   }
 
   playVictoryFanfare() {

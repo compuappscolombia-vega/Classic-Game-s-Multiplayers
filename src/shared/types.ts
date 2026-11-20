@@ -1,4 +1,4 @@
-export type GameType = 'domino' | 'parques' | 'ahorcado' | 'bingo' | 'ajedrez';
+export type GameType = 'domino' | 'parques' | 'ahorcado' | 'bingo' | 'ajedrez' | 'barcos';
 export type GameMode = 'online' | 'ai';
 export type Language = 'en' | 'es';
 
@@ -218,6 +218,57 @@ export interface ChessState {
   lastActionText: string;
 }
 
+// --- BARCOS DE GUERRA (BATTLESHIP) ---
+export type BarcosShipId = 'carrier' | 'battleship' | 'cruiser' | 'submarine' | 'destroyer';
+export type BarcosOrientation = 'H' | 'V';
+export type BarcosShotResult = 'miss' | 'hit' | 'sunk';
+
+export interface BarcosShip {
+  id: BarcosShipId;
+  nameEn: string;
+  nameEs: string;
+  size: number;
+  row: number;
+  col: number;
+  orientation: BarcosOrientation;
+  placed: boolean;
+  hits: number[];
+  sunk: boolean;
+}
+
+export interface BarcosShot {
+  row: number;
+  col: number;
+  result: BarcosShotResult;
+  sunkShipId?: BarcosShipId;
+}
+
+export interface BarcosBoardState {
+  playerId: string;
+  ready: boolean;
+  ships: BarcosShip[];
+  incomingShots: BarcosShot[];
+}
+
+export interface BarcosState {
+  gridSize: number;
+  boards: Record<string, BarcosBoardState>;
+  turnOrder: [string, string];
+  currentTurnIndex: number;
+  phase: 'setup' | 'battle' | 'finished';
+  winnerId: string | null;
+  lastShot: {
+    shooterId: string;
+    targetId: string;
+    row: number;
+    col: number;
+    result: BarcosShotResult;
+    sunkShipId?: BarcosShipId;
+  } | null;
+  turnCount: number;
+  lastActionText: string;
+}
+
 // --- ROOM & MULTIPLAYER ---
 export interface RoomSummary {
   id: string;
@@ -239,6 +290,7 @@ export interface RoomState extends RoomSummary {
   ahorcado?: AhorcadoState;
   bingo?: BingoState;
   ajedrez?: ChessState;
+  barcos?: BarcosState;
 }
 
 export type ClientWsMessage =

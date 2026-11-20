@@ -40,6 +40,7 @@ const GAME_LABELS: Record<GameType, string> = {
   ahorcado: 'Ahorcado',
   bingo: 'Bingo 75',
   ajedrez: 'Ajedrez',
+  barcos: 'Barcos de Guerra',
 };
 
 const QUICK_EMOTES = ['👏', '🎲', '🔥', '🏆', '😅', '🎯'];
@@ -85,7 +86,12 @@ export function SocialLobby({
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     const label = roomName.trim() || `${player.name}'s ${GAME_LABELS[selectedGame]}`;
-    onCreateRoom(label, selectedGame, selectedGame === 'ajedrez' ? 2 : maxPlayers, isPrivate);
+    onCreateRoom(
+      label,
+      selectedGame,
+      selectedGame === 'ajedrez' || selectedGame === 'barcos' ? 2 : maxPlayers,
+      isPrivate
+    );
     setRoomName('');
   };
 
@@ -283,7 +289,7 @@ export function SocialLobby({
                   onChange={(e) => {
                     const nextGame = e.target.value as GameType;
                     setSelectedGame(nextGame);
-                    if (nextGame === 'ajedrez') setMaxPlayers(2);
+                    if (nextGame === 'ajedrez' || nextGame === 'barcos') setMaxPlayers(2);
                   }}
                   className="sm:col-span-3 min-h-[44px] px-3 rounded-lg bg-black/40 border border-white/10 text-sm text-[#f4f1ea] focus:outline-none focus:border-emerald-400"
                 >
@@ -292,10 +298,11 @@ export function SocialLobby({
                   <option value="ahorcado">Ahorcado</option>
                   <option value="bingo">Bingo 75</option>
                   <option value="ajedrez">Ajedrez</option>
+                  <option value="barcos">Barcos de Guerra</option>
                 </select>
                 <select
-                  value={selectedGame === 'ajedrez' ? 2 : maxPlayers}
-                  disabled={selectedGame === 'ajedrez'}
+                  value={selectedGame === 'ajedrez' || selectedGame === 'barcos' ? 2 : maxPlayers}
+                  disabled={selectedGame === 'ajedrez' || selectedGame === 'barcos'}
                   onChange={(e) => setMaxPlayers(Number(e.target.value))}
                   className="sm:col-span-2 min-h-[44px] px-2.5 rounded-lg bg-black/40 border border-white/10 text-sm text-[#f4f1ea] focus:outline-none focus:border-emerald-400 disabled:opacity-60"
                 >
@@ -356,7 +363,7 @@ export function SocialLobby({
             <div className="space-y-3 flex-1">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-1 p-1 bg-black/30 rounded-lg border border-white/8 overflow-x-auto">
-                  {(['all', 'domino', 'parques', 'ahorcado', 'bingo', 'ajedrez'] as const).map((g) => (
+                  {(['all', 'domino', 'parques', 'ahorcado', 'bingo', 'ajedrez', 'barcos'] as const).map((g) => (
                     <button
                       key={g}
                       type="button"
