@@ -48,10 +48,16 @@
         "bingoWins": {
           "type": "number"
         },
+        "ajedrezWins": {
+          "type": "number"
+        },
         "voiceEnabled": {
           "type": "boolean"
         },
         "soundEnabled": {
+          "type": "boolean"
+        },
+        "musicEnabled": {
           "type": "boolean"
         },
         "language": {
@@ -147,7 +153,7 @@
         },
         "favoriteGame": {
           "type": "string",
-          "enum": ["domino", "parques", "ahorcado", "bingo"]
+          "enum": ["domino", "parques", "ahorcado", "bingo", "ajedrez"]
         },
         "updatedAt": {
           "type": "string",
@@ -185,7 +191,7 @@
         },
         "game": {
           "type": "string",
-          "enum": ["domino", "parques", "ahorcado", "bingo"]
+          "enum": ["domino", "parques", "ahorcado", "bingo", "ajedrez"]
         },
         "mode": {
           "type": "string",
@@ -207,6 +213,49 @@
         }
       },
       "required": ["id", "uid", "game", "mode", "outcome", "score", "eloDelta", "createdAt"]
+    },
+    "DailyMissionState": {
+      "title": "DailyMissionState",
+      "description": "Owner-only daily mission progress and reward claim flags keyed by YYYY-MM-DD.",
+      "type": "object",
+      "properties": {
+        "dateKey": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 16,
+          "pattern": "^[0-9\\-]+$"
+        },
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "m1Id": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "m1Progress": { "type": "number" },
+        "m1Claimed": { "type": "boolean" },
+        "m2Id": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "m2Progress": { "type": "number" },
+        "m2Claimed": { "type": "boolean" },
+        "m3Id": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "m3Progress": { "type": "number" },
+        "m3Claimed": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "dateKey",
+        "uid",
+        "m1Id",
+        "m1Progress",
+        "m1Claimed",
+        "m2Id",
+        "m2Progress",
+        "m2Claimed",
+        "m3Id",
+        "m3Progress",
+        "m3Claimed",
+        "updatedAt"
+      ]
     }
   },
   "firestore": {
@@ -221,6 +270,10 @@
     "/users/{userId}/matches/{matchId}": {
       "schema": { "$ref": "#/entities/MatchRecord" },
       "description": "Owner-only match history log for player statistics and cross-device sync."
+    },
+    "/users/{userId}/missions/{dateKey}": {
+      "schema": { "$ref": "#/entities/DailyMissionState" },
+      "description": "Owner-only daily mission progress and reward claims synchronized across devices."
     },
     "/leaderboard/{entryId}": {
       "schema": { "$ref": "#/entities/LeaderboardEntry" },

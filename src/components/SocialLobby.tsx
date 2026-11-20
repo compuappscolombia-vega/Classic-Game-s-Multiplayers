@@ -39,6 +39,7 @@ const GAME_LABELS: Record<GameType, string> = {
   parques: 'Parqués',
   ahorcado: 'Ahorcado',
   bingo: 'Bingo 75',
+  ajedrez: 'Ajedrez',
 };
 
 const QUICK_EMOTES = ['👏', '🎲', '🔥', '🏆', '😅', '🎯'];
@@ -84,7 +85,7 @@ export function SocialLobby({
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     const label = roomName.trim() || `${player.name}'s ${GAME_LABELS[selectedGame]}`;
-    onCreateRoom(label, selectedGame, maxPlayers, isPrivate);
+    onCreateRoom(label, selectedGame, selectedGame === 'ajedrez' ? 2 : maxPlayers, isPrivate);
     setRoomName('');
   };
 
@@ -103,7 +104,7 @@ export function SocialLobby({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
       {/* Left 7 cols: Multiplayer Tables OR Active Waiting Room */}
-      <div className="lg:col-span-7 bg-[#141b18] border border-white/10 rounded-2xl p-5 flex flex-col gap-5">
+      <div className="lg:col-span-7 surface-3d-panel rounded-2xl p-5 flex flex-col gap-5">
         {socketError && (
           <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-400/30 text-xs text-rose-200">
             {socketError}
@@ -279,18 +280,24 @@ export function SocialLobby({
                 />
                 <select
                   value={selectedGame}
-                  onChange={(e) => setSelectedGame(e.target.value as GameType)}
+                  onChange={(e) => {
+                    const nextGame = e.target.value as GameType;
+                    setSelectedGame(nextGame);
+                    if (nextGame === 'ajedrez') setMaxPlayers(2);
+                  }}
                   className="sm:col-span-3 min-h-[44px] px-3 rounded-lg bg-black/40 border border-white/10 text-sm text-[#f4f1ea] focus:outline-none focus:border-emerald-400"
                 >
                   <option value="domino">Dominó</option>
                   <option value="parques">Parqués</option>
                   <option value="ahorcado">Ahorcado</option>
                   <option value="bingo">Bingo 75</option>
+                  <option value="ajedrez">Ajedrez</option>
                 </select>
                 <select
-                  value={maxPlayers}
+                  value={selectedGame === 'ajedrez' ? 2 : maxPlayers}
+                  disabled={selectedGame === 'ajedrez'}
                   onChange={(e) => setMaxPlayers(Number(e.target.value))}
-                  className="sm:col-span-2 min-h-[44px] px-2.5 rounded-lg bg-black/40 border border-white/10 text-sm text-[#f4f1ea] focus:outline-none focus:border-emerald-400"
+                  className="sm:col-span-2 min-h-[44px] px-2.5 rounded-lg bg-black/40 border border-white/10 text-sm text-[#f4f1ea] focus:outline-none focus:border-emerald-400 disabled:opacity-60"
                 >
                   <option value={2}>2 Seats</option>
                   <option value={3}>3 Seats</option>
@@ -349,7 +356,7 @@ export function SocialLobby({
             <div className="space-y-3 flex-1">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-1 p-1 bg-black/30 rounded-lg border border-white/8 overflow-x-auto">
-                  {(['all', 'domino', 'parques', 'ahorcado', 'bingo'] as const).map((g) => (
+                  {(['all', 'domino', 'parques', 'ahorcado', 'bingo', 'ajedrez'] as const).map((g) => (
                     <button
                       key={g}
                       type="button"
@@ -411,7 +418,7 @@ export function SocialLobby({
       </div>
 
       {/* Right 5 cols: Real-Time Social Chat */}
-      <div className="lg:col-span-5 bg-[#141b18] border border-white/10 rounded-2xl p-5 flex flex-col h-[520px]">
+      <div className="lg:col-span-5 surface-3d-panel rounded-2xl p-5 flex flex-col h-[520px]">
         <div className="flex items-center justify-between pb-3 border-b border-white/10">
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-emerald-400" />

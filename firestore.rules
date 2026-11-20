@@ -44,8 +44,8 @@ service cloud.firestore {
       && data.keys().hasOnly([
         'uid', 'displayName', 'photoURL', 'provider', 'elo',
         'totalWins', 'totalGames', 'winStreak',
-        'dominoWins', 'parquesWins', 'ahorcadoWins', 'bingoWins',
-        'voiceEnabled', 'soundEnabled', 'language', 'createdAt', 'updatedAt'
+        'dominoWins', 'parquesWins', 'ahorcadoWins', 'bingoWins', 'ajedrezWins',
+        'voiceEnabled', 'soundEnabled', 'musicEnabled', 'language', 'createdAt', 'updatedAt'
       ])
       && data.uid is string && data.uid == request.auth.uid && data.uid == userId
       && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 40
@@ -59,8 +59,10 @@ service cloud.firestore {
       && data.parquesWins is number && data.parquesWins >= 0
       && data.ahorcadoWins is number && data.ahorcadoWins >= 0
       && data.bingoWins is number && data.bingoWins >= 0
+      && (!('ajedrezWins' in data) || (data.ajedrezWins is number && data.ajedrezWins >= 0))
       && data.voiceEnabled is bool
       && data.soundEnabled is bool
+      && (!('musicEnabled' in data) || data.musicEnabled is bool)
       && data.language in ['en', 'es']
       && data.createdAt is timestamp
       && data.updatedAt is timestamp;
@@ -91,7 +93,7 @@ service cloud.firestore {
       && data.totalWins is number && data.totalWins >= 0
       && data.totalGames is number && data.totalGames >= data.totalWins
       && data.winStreak is number && data.winStreak >= 0 && data.winStreak <= data.totalWins
-      && data.favoriteGame in ['domino', 'parques', 'ahorcado', 'bingo']
+      && data.favoriteGame in ['domino', 'parques', 'ahorcado', 'bingo', 'ajedrez']
       && data.updatedAt is timestamp;
     }
 
@@ -100,12 +102,41 @@ service cloud.firestore {
       && data.keys().hasOnly(['id', 'uid', 'game', 'mode', 'outcome', 'score', 'eloDelta', 'createdAt'])
       && data.id is string && data.id == matchId
       && data.uid is string && data.uid == request.auth.uid && data.uid == userId
-      && data.game in ['domino', 'parques', 'ahorcado', 'bingo']
+      && data.game in ['domino', 'parques', 'ahorcado', 'bingo', 'ajedrez']
       && data.mode in ['online', 'ai']
       && data.outcome in ['win', 'loss', 'draw']
       && data.score is number && data.score >= 0 && data.score <= 100000
       && data.eloDelta is number && data.eloDelta >= -100 && data.eloDelta <= 100
       && data.createdAt is timestamp;
+    }
+
+    function isValidDailyMissionState(data, userId, dateKey) {
+      return data.keys().hasAll([
+        'dateKey', 'uid',
+        'm1Id', 'm1Progress', 'm1Claimed',
+        'm2Id', 'm2Progress', 'm2Claimed',
+        'm3Id', 'm3Progress', 'm3Claimed',
+        'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'dateKey', 'uid',
+        'm1Id', 'm1Progress', 'm1Claimed',
+        'm2Id', 'm2Progress', 'm2Claimed',
+        'm3Id', 'm3Progress', 'm3Claimed',
+        'updatedAt'
+      ])
+      && data.dateKey is string && data.dateKey == dateKey
+      && data.uid is string && data.uid == request.auth.uid && data.uid == userId
+      && data.m1Id is string && data.m1Id.size() >= 1 && data.m1Id.size() <= 40
+      && data.m1Progress is number && data.m1Progress >= 0 && data.m1Progress <= 10
+      && data.m1Claimed is bool
+      && data.m2Id is string && data.m2Id.size() >= 1 && data.m2Id.size() <= 40
+      && data.m2Progress is number && data.m2Progress >= 0 && data.m2Progress <= 10
+      && data.m2Claimed is bool
+      && data.m3Id is string && data.m3Id.size() >= 1 && data.m3Id.size() <= 40
+      && data.m3Progress is number && data.m3Progress >= 0 && data.m3Progress <= 10
+      && data.m3Claimed is bool
+      && data.updatedAt is timestamp;
     }
 
     // --- Collection Rules ---
@@ -126,13 +157,13 @@ service cloud.firestore {
         && incoming().updatedAt == request.time
         && (
           // Action: Update Preferences & Profile Display
-          incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'voiceEnabled', 'soundEnabled', 'language', 'updatedAt'])
+          incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'voiceEnabled', 'soundEnabled', 'musicEnabled', 'language', 'updatedAt'])
           ||
           // Action: Record Match Progression (bounded ELO delta)
           (
             incoming().diff(existing()).affectedKeys().hasOnly([
               'elo', 'totalWins', 'totalGames', 'winStreak',
-              'dominoWins', 'parquesWins', 'ahorcadoWins', 'bingoWins', 'updatedAt'
+              'dominoWins', 'parquesWins', 'ahorcadoWins', 'bingoWins', 'ajedrezWins', 'updatedAt'
             ])
             && incoming().elo - existing().elo <= 100
             && existing().elo - incoming().elo <= 100
@@ -140,6 +171,13 @@ service cloud.firestore {
             && incoming().totalGames - existing().totalGames <= 1
             && incoming().totalWins >= existing().totalWins
             && incoming().totalWins - existing().totalWins <= 1
+          )
+          ||
+          // Action: Claim Daily Mission ELO Bonus (bounded <= 50 ELO)
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly(['elo', 'updatedAt'])
+            && incoming().elo > existing().elo
+            && incoming().elo - existing().elo <= 50
           )
         );
       allow delete: if false;
@@ -170,6 +208,21 @@ service cloud.firestore {
           && incoming().createdAt == request.time;
         allow update, delete: if false;
       }
+
+      // Owner-only Daily Missions
+      match /missions/{dateKey} {
+        allow get: if isValidId(userId) && isValidId(dateKey) && isOwner(userId);
+        allow list: if false;
+        allow create: if isValidId(userId) && isValidId(dateKey) && isVerified() && isOwner(userId)
+          && isValidDailyMissionState(incoming(), userId, dateKey)
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId) && isValidId(dateKey) && isVerified() && isOwner(userId)
+          && isValidDailyMissionState(incoming(), userId, dateKey)
+          && incoming().uid == existing().uid
+          && incoming().dateKey == existing().dateKey
+          && incoming().updatedAt == request.time;
+        allow delete: if false;
+      }
     }
 
     // Global Competitive Leaderboard
@@ -199,6 +252,13 @@ service cloud.firestore {
             && incoming().totalGames - existing().totalGames <= 1
             && incoming().totalWins >= existing().totalWins
             && incoming().totalWins - existing().totalWins <= 1
+          )
+          ||
+          // Action: Daily Mission ELO Bonus Sync (bounded <= 50 ELO)
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly(['elo', 'updatedAt'])
+            && incoming().elo > existing().elo
+            && incoming().elo - existing().elo <= 50
           )
         );
       allow delete: if false;

@@ -19,27 +19,43 @@ const GAME_NAME: Record<GameType, string> = {
   parques: 'Parqués',
   ahorcado: 'Ahorcado',
   bingo: 'Bingo',
+  ajedrez: 'Ajedrez',
 };
 
 export function LeaderboardView({ profile, onOpenAuth }: LeaderboardViewProps) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [history, setHistory] = useState<MatchHistoryRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [syncNotice, setSyncNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!profile) {
       setEntries([]);
       setHistory([]);
+      setSyncNotice(null);
       return;
     }
     setLoading(true);
-    const unsubLb = subscribeToLeaderboard((rows) => {
-      setEntries(rows);
-      setLoading(false);
-    });
-    const unsubHist = subscribeToMatchHistory(profile.uid, (recs) => {
-      setHistory(recs);
-    });
+    setSyncNotice(null);
+    const unsubLb = subscribeToLeaderboard(
+      (rows) => {
+        setEntries(rows);
+        setLoading(false);
+      },
+      () => {
+        setLoading(false);
+        setSyncNotice('Standings sync unavailable until Firestore security rules are published.');
+      }
+    );
+    const unsubHist = subscribeToMatchHistory(
+      profile.uid,
+      (recs) => {
+        setHistory(recs);
+      },
+      () => {
+        // Non-fatal match history permission fallback
+      }
+    );
     return () => {
       unsubLb();
       unsubHist();
@@ -48,7 +64,7 @@ export function LeaderboardView({ profile, onOpenAuth }: LeaderboardViewProps) {
 
   if (!profile) {
     return (
-      <div className="bg-[#141b18] border border-white/10 rounded-2xl p-8 text-center max-w-xl mx-auto space-y-4">
+      <div className="surface-3d-panel rounded-2xl p-8 text-center max-w-xl mx-auto space-y-4">
         <Trophy className="w-10 h-10 text-amber-400 mx-auto" />
         <h3 className="text-xl font-bold text-[#f4f1ea]">Global Competitive Rankings</h3>
         <p className="text-sm text-stone-400 leading-relaxed">
@@ -69,7 +85,7 @@ export function LeaderboardView({ profile, onOpenAuth }: LeaderboardViewProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
       {/* Left 8 cols: Global Standings */}
-      <div className="lg:col-span-8 bg-[#141b18] border border-white/10 rounded-2xl p-5 space-y-4">
+      <div className="lg:col-span-8 surface-3d-panel rounded-2xl p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-bold text-[#f4f1ea]">Global Salon Leaderboard</h3>
@@ -78,7 +94,9 @@ export function LeaderboardView({ profile, onOpenAuth }: LeaderboardViewProps) {
           <span className="text-xs text-amber-300 font-mono-num">Your ELO: {profile.elo}</span>
         </div>
 
-        {loading ? (
+        {syncNotice ? (
+          <div className="py-8 text-center text-xs text-amber-300">{syncNotice}</div>
+        ) : loading ? (
           <div className="py-10 text-center text-sm text-stone-400">Loading standings...</div>
         ) : entries.length === 0 ? (
           <div className="py-10 text-center text-sm text-stone-400">
@@ -150,7 +168,7 @@ export function LeaderboardView({ profile, onOpenAuth }: LeaderboardViewProps) {
       </div>
 
       {/* Right 4 cols: Personal Synced Match History */}
-      <div className="lg:col-span-4 bg-[#141b18] border border-white/10 rounded-2xl p-5 space-y-4">
+      <div className="lg:col-span-4 surface-3d-panel rounded-2xl p-5 space-y-4">
         <div className="flex items-center gap-2">
           <History className="w-4 h-4 text-amber-400" />
           <h3 className="text-base font-bold text-[#f4f1ea]">Recent Match Log</h3>

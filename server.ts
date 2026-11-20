@@ -40,6 +40,11 @@ import {
   drawNextBingoBall,
   sanitizeBingoForClient,
 } from './src/shared/bingoEngine.ts';
+import {
+  applyChessMove,
+  createChessGame,
+  resignChessGame,
+} from './src/shared/chessEngine.ts';
 
 const PORT = Number(process.env.PORT || 3000);
 const IS_PROD = process.env.NODE_ENV === 'production';
@@ -132,6 +137,9 @@ function sanitizeRoomForViewer(room: RoomState, viewerId: string): RoomState {
   }
   if (room.bingo) {
     copy.bingo = sanitizeBingoForClient(room.bingo);
+  }
+  if (room.ajedrez) {
+    copy.ajedrez = room.ajedrez;
   }
   return copy;
 }
@@ -241,6 +249,7 @@ function startRoomGame(
   room.parques = undefined;
   room.ahorcado = undefined;
   room.bingo = undefined;
+  room.ajedrez = undefined;
   stopBingoTimer(room.id);
 
   if (room.game === 'domino') {
@@ -255,9 +264,14 @@ function startRoomGame(
     );
   } else if (room.game === 'bingo') {
     room.bingo = createBingoGame(playerIds, options?.pattern || 'line');
-    // Draw first ball after brief moment
     room.bingo = drawNextBingoBall(room.bingo);
     startBingoTimer(room.id);
+  } else if (room.game === 'ajedrez') {
+    room.ajedrez = createChessGame(
+      playerIds[0],
+      playerIds[1],
+      playerNames[playerIds[0]] || 'White'
+    );
   }
 
   broadcastRoomState(room);
@@ -330,6 +344,36 @@ function handleGameAction(
       }
       broadcastRoomState(room);
     }
+    return;
+  }
+
+  if (room.game === 'ajedrez' && room.ajedrez) {
+    if (
+      action.kind === 'move' &&
+      typeof action.from === 'number' &&
+      typeof action.to === 'number'
+    ) {
+      const promotion =
+        action.promotion === 'q' ||
+        action.promotion === 'r' ||
+        action.promotion === 'b' ||
+        action.promotion === 'n'
+          ? action.promotion
+          : undefined;
+      room.ajedrez = applyChessMove(
+        room.ajedrez,
+        pid,
+        { from: action.from, to: action.to, promotion },
+        pname
+      );
+    } else if (action.kind === 'resign') {
+      room.ajedrez = resignChessGame(room.ajedrez, pid, pname);
+    }
+    if (room.ajedrez.status !== 'playing') {
+      room.status = 'finished';
+      broadcastAll({ type: 'rooms_list', rooms: getRoomSummaries() });
+    }
+    broadcastRoomState(room);
   }
 }
 
@@ -455,7 +499,10 @@ async function bootstrap() {
         leaveCurrentRoom(client);
         const roomId = makeId('room');
         const code = makeRoomCode();
-        const maxPlayers = Math.min(Math.max(Number(msg.maxPlayers) || 4, 2), 4);
+        const maxPlayers =
+          msg.game === 'ajedrez'
+            ? 2
+            : Math.min(Math.max(Number(msg.maxPlayers) || 4, 2), 4);
         const room: RoomState = {
           id: roomId,
           code,

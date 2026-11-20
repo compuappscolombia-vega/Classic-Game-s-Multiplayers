@@ -1,4 +1,4 @@
-export type GameType = 'domino' | 'parques' | 'ahorcado' | 'bingo';
+export type GameType = 'domino' | 'parques' | 'ahorcado' | 'bingo' | 'ajedrez';
 export type GameMode = 'online' | 'ai';
 export type Language = 'en' | 'es';
 
@@ -21,6 +21,23 @@ export interface ChatMessage {
   roomId: string; // 'lobby' or specific roomId
   timestamp: number;
   kind?: 'chat' | 'system' | 'emote';
+}
+
+// --- DAILY MISSIONS ---
+export interface DailyMissionDef {
+  id: string;
+  titleEn: string;
+  titleEs: string;
+  game: GameType | 'any';
+  kind: 'win' | 'play';
+  target: number;
+  rewardElo: number;
+}
+
+export interface DailyMissionSlot {
+  def: DailyMissionDef;
+  progress: number;
+  claimed: boolean;
 }
 
 // --- DOMINO ---
@@ -148,6 +165,59 @@ export interface BingoState {
   lastActionText: string;
 }
 
+// --- AJEDREZ (CHESS) ---
+export type ChessColor = 'w' | 'b';
+export type ChessPieceType = 'p' | 'n' | 'b' | 'r' | 'q' | 'k';
+export type ChessDifficulty = 'easy' | 'medium' | 'hard' | 'very_hard' | 'very_very_hard';
+
+export interface ChessPiece {
+  color: ChessColor;
+  type: ChessPieceType;
+}
+
+export interface ChessCastlingRights {
+  wK: boolean;
+  wQ: boolean;
+  bK: boolean;
+  bQ: boolean;
+}
+
+export interface ChessMove {
+  from: number; // 0..63 (row*8 + col, row 0 = rank 8)
+  to: number;
+  promotion?: ChessPieceType;
+  isCastle?: 'K' | 'Q';
+  isEnPassant?: boolean;
+  captured?: ChessPieceType;
+}
+
+export interface ChessHistoryEntry {
+  san: string;
+  uci: string;
+  color: ChessColor;
+  from: number;
+  to: number;
+}
+
+export interface ChessState {
+  board: (ChessPiece | null)[]; // 64 squares
+  turn: ChessColor;
+  castling: ChessCastlingRights;
+  enPassantSquare: number | null;
+  halfMoveClock: number;
+  fullMoveNumber: number;
+  whiteId: string;
+  blackId: string;
+  inCheck: boolean;
+  status: 'playing' | 'checkmate' | 'stalemate' | 'draw' | 'resigned';
+  winnerId: string | null;
+  lastMove: { from: number; to: number } | null;
+  history: ChessHistoryEntry[];
+  capturedByWhite: ChessPieceType[];
+  capturedByBlack: ChessPieceType[];
+  lastActionText: string;
+}
+
 // --- ROOM & MULTIPLAYER ---
 export interface RoomSummary {
   id: string;
@@ -168,6 +238,7 @@ export interface RoomState extends RoomSummary {
   parques?: ParquesState;
   ahorcado?: AhorcadoState;
   bingo?: BingoState;
+  ajedrez?: ChessState;
 }
 
 export type ClientWsMessage =

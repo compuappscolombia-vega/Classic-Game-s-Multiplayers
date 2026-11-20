@@ -31,74 +31,133 @@ const KEYBOARD_ROWS = [
   ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
 ];
 
-function GallowsSvg({ wrongCount }: { wrongCount: number }) {
+function Gallows3DStage({ wrongCount }: { wrongCount: number }) {
   return (
-    <svg viewBox="0 0 180 200" className="w-40 h-44 sm:w-48 sm:h-52 mx-auto" aria-label={`Hangman gallows with ${wrongCount} of 6 misses`}>
-      <defs>
-        <linearGradient id="timberVert" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#8B5A2B" />
-          <stop offset="45%" stopColor="#653B17" />
-          <stop offset="100%" stopColor="#3B200B" />
-        </linearGradient>
-        <linearGradient id="timberHoriz" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#9C6937" />
-          <stop offset="50%" stopColor="#6D411B" />
-          <stop offset="100%" stopColor="#3B200B" />
-        </linearGradient>
-        <linearGradient id="hempRope" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#FCD34D" />
-          <stop offset="50%" stopColor="#D97706" />
-          <stop offset="100%" stopColor="#92400E" />
-        </linearGradient>
-        <filter id="gallowsShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="2" dy="5" stdDeviation="3" floodColor="#000000" floodOpacity="0.65" />
-        </filter>
-      </defs>
+    <div className="relative px-6 py-4 rounded-2xl bg-gradient-to-b from-[#0b100e]/90 to-[#060908]/95 border border-amber-500/25 shadow-[inset_0_4px_18px_rgba(0,0,0,0.85),0_16px_30px_rgba(0,0,0,0.65)]">
+      <svg
+        viewBox="0 0 220 220"
+        className="w-44 h-48 sm:w-52 sm:h-56 mx-auto"
+        aria-label={`Hangman gallows with ${wrongCount} of 6 misses`}
+      >
+        <defs>
+          {/* Warm overhead salon spotlight cone */}
+          <radialGradient id="stageSpotlight" cx="56%" cy="18%" r="72%">
+            <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.22" />
+            <stop offset="55%" stopColor="#D97706" stopOpacity="0.06" />
+            <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+          </radialGradient>
+          {/* 3D Oak Timber Gradients */}
+          <linearGradient id="timberVert3d" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#B87D44" />
+            <stop offset="35%" stopColor="#7C4B21" />
+            <stop offset="100%" stopColor="#2F1807" />
+          </linearGradient>
+          <linearGradient id="timberHoriz3d" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#C4894D" />
+            <stop offset="45%" stopColor="#7F4C22" />
+            <stop offset="100%" stopColor="#2D1606" />
+          </linearGradient>
+          {/* Braided Hemp Rope Gradient */}
+          <linearGradient id="hempRope3d" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#FDE68A" />
+            <stop offset="48%" stopColor="#D97706" />
+            <stop offset="100%" stopColor="#78350F" />
+          </linearGradient>
+          {/* Volumetric Carved Ivory Mannequin Gradients */}
+          <radialGradient id="figureHead3d" cx="35%" cy="30%" r="70%">
+            <stop offset="0%" stopColor="#FFFDF8" />
+            <stop offset="45%" stopColor="#E9DABF" />
+            <stop offset="88%" stopColor="#9C8462" />
+            <stop offset="100%" stopColor="#5C4930" />
+          </radialGradient>
+          <linearGradient id="figureLimb3d" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFFDF8" />
+            <stop offset="50%" stopColor="#DECBAE" />
+            <stop offset="100%" stopColor="#8B7352" />
+          </linearGradient>
+          <filter id="gallows3dShadow" x="-25%" y="-20%" width="150%" height="150%">
+            <feDropShadow dx="4" dy="8" stdDeviation="4" floodColor="#000000" floodOpacity="0.72" />
+          </filter>
+        </defs>
 
-      <g filter="url(#gallowsShadow)">
-        {/* Carved timber base, post, beam, and brace */}
-        <rect x="16" y="180" width="102" height="10" rx="4" fill="url(#timberHoriz)" stroke="#2A1506" strokeWidth="1.5" />
-        <rect x="44" y="16" width="10" height="168" rx="3" fill="url(#timberVert)" stroke="#2A1506" strokeWidth="1.5" />
-        <rect x="44" y="16" width="84" height="10" rx="3" fill="url(#timberHoriz)" stroke="#2A1506" strokeWidth="1.5" />
-        <line x1="50" y1="52" x2="78" y2="23" stroke="url(#timberHoriz)" strokeWidth="7" strokeLinecap="round" />
-        {/* Forged brass/iron corner rivets */}
-        <circle cx="49" cy="21" r="2.2" fill="#F59E0B" />
-        <circle cx="122" cy="21" r="2.2" fill="#F59E0B" />
-        {/* Braided hemp rope */}
-        <line x1="122" y1="26" x2="122" y2="45" stroke="url(#hempRope)" strokeWidth="4.5" strokeLinecap="round" />
-      </g>
+        {/* Overhead Lamp Cone & Floor Platform Shadow */}
+        <ellipse cx="118" cy="105" rx="96" ry="96" fill="url(#stageSpotlight)" />
+        <ellipse cx="110" cy="201" rx="76" ry="11" fill="#000000" fillOpacity="0.65" />
 
-      {/* Sculpted Chalk/Ivory Figure */}
-      <g filter="url(#gallowsShadow)">
-        {/* 1. Head */}
-        {wrongCount >= 1 && (
-          <circle cx="122" cy="61" r="15.5" fill="rgba(250,246,238,0.08)" stroke="#F7F1E5" strokeWidth="4" />
-        )}
-        {/* 2. Torso */}
-        {wrongCount >= 2 && (
-          <line x1="122" y1="77" x2="122" y2="126" stroke="#F7F1E5" strokeWidth="4.5" strokeLinecap="round" />
-        )}
-        {/* 3. Left Arm */}
-        {wrongCount >= 3 && (
-          <line x1="122" y1="88" x2="98" y2="111" stroke="#F7F1E5" strokeWidth="4" strokeLinecap="round" />
-        )}
-        {/* 4. Right Arm */}
-        {wrongCount >= 4 && (
-          <line x1="122" y1="88" x2="146" y2="111" stroke="#F7F1E5" strokeWidth="4" strokeLinecap="round" />
-        )}
-        {/* 5. Left Leg */}
-        {wrongCount >= 5 && (
-          <line x1="122" y1="126" x2="102" y2="158" stroke="#F7F1E5" strokeWidth="4.2" strokeLinecap="round" />
-        )}
-        {/* 6. Right Leg + expression */}
-        {wrongCount >= 6 && (
-          <>
-            <line x1="122" y1="126" x2="142" y2="158" stroke="#F7F1E5" strokeWidth="4.2" strokeLinecap="round" />
-            <path d="M116 56 L120 60 M120 56 L116 60 M124 56 L128 60 M128 56 L124 60" stroke="#FB7185" strokeWidth="2.4" strokeLinecap="round" />
-          </>
-        )}
-      </g>
-    </svg>
+        {/* 3D Timber Platform, Post, Crossbeam, Diagonal Brace, Forged Iron Brackets */}
+        <g filter="url(#gallows3dShadow)">
+          {/* 3D Extruded Oak Base */}
+          <rect x="20" y="186" width="130" height="14" rx="4" fill="url(#timberHoriz3d)" stroke="#1E0E04" strokeWidth="1.5" />
+          <rect x="26" y="181" width="118" height="6" rx="2" fill="#A66E38" stroke="#2D1606" strokeWidth="1" />
+
+          {/* Vertical Timber Post */}
+          <rect x="46" y="18" width="14" height="168" rx="3" fill="url(#timberVert3d)" stroke="#1E0E04" strokeWidth="1.5" />
+          {/* Top Crossbeam */}
+          <rect x="42" y="16" width="112" height="14" rx="3" fill="url(#timberHoriz3d)" stroke="#1E0E04" strokeWidth="1.5" />
+          {/* Angled Timber Support Brace */}
+          <polygon points="60,64 60,48 92,30 104,30" fill="url(#timberHoriz3d)" stroke="#1E0E04" strokeWidth="1.5" />
+
+          {/* Forged Iron Corner Straps & Brass Rivets */}
+          <path d="M46 18 H68 V34 H58 V28 H46 Z" fill="#27272A" stroke="#52525B" strokeWidth="1" />
+          <circle cx="53" cy="23" r="2.3" fill="#FBBF24" />
+          <circle cx="62" cy="23" r="1.8" fill="#FBBF24" />
+          <circle cx="142" cy="23" r="2.3" fill="#FBBF24" />
+
+          {/* Braided Rope & Coiled Knot */}
+          <line x1="142" y1="30" x2="142" y2="54" stroke="url(#hempRope3d)" strokeWidth="5.5" strokeLinecap="round" />
+          <rect x="137" y="42" width="10" height="4" rx="2" fill="#B45309" stroke="#451A03" strokeWidth="1" />
+          <rect x="137" y="47" width="10" height="4" rx="2" fill="#D97706" stroke="#451A03" strokeWidth="1" />
+        </g>
+
+        {/* Volumetric 3D Sculpted Ivory Figure */}
+        <g filter="url(#gallows3dShadow)">
+          {/* 1. 3D Sculpted Head */}
+          {wrongCount >= 1 && (
+            <g>
+              <circle cx="142" cy="69" r="17" fill="url(#figureHead3d)" stroke="#4A3A25" strokeWidth="1.6" />
+              <ellipse cx="136" cy="62" rx="5" ry="3" transform="rotate(-25 136 62)" fill="#FFFFFF" fillOpacity="0.6" />
+            </g>
+          )}
+          {/* 2. Sculpted 3D Torso */}
+          {wrongCount >= 2 && (
+            <g>
+              <rect x="134.5" y="85" width="15" height="50" rx="7.5" fill="url(#figureLimb3d)" stroke="#4A3A25" strokeWidth="1.5" />
+              {/* Collar ring */}
+              <ellipse cx="142" cy="87" rx="8" ry="3" fill="#B45309" />
+            </g>
+          )}
+          {/* 3. Left Sculpted Arm */}
+          {wrongCount >= 3 && (
+            <g>
+              <line x1="136" y1="95" x2="112" y2="122" stroke="#4A3A25" strokeWidth="10" strokeLinecap="round" />
+              <line x1="136" y1="95" x2="112" y2="122" stroke="url(#figureLimb3d)" strokeWidth="7.5" strokeLinecap="round" />
+            </g>
+          )}
+          {/* 4. Right Sculpted Arm */}
+          {wrongCount >= 4 && (
+            <g>
+              <line x1="148" y1="95" x2="172" y2="122" stroke="#4A3A25" strokeWidth="10" strokeLinecap="round" />
+              <line x1="148" y1="95" x2="172" y2="122" stroke="url(#figureLimb3d)" strokeWidth="7.5" strokeLinecap="round" />
+            </g>
+          )}
+          {/* 5. Left Sculpted Leg */}
+          {wrongCount >= 5 && (
+            <g>
+              <line x1="138" y1="132" x2="118" y2="170" stroke="#4A3A25" strokeWidth="11" strokeLinecap="round" />
+              <line x1="138" y1="132" x2="118" y2="170" stroke="url(#figureLimb3d)" strokeWidth="8.5" strokeLinecap="round" />
+            </g>
+          )}
+          {/* 6. Right Sculpted Leg + Final Expression */}
+          {wrongCount >= 6 && (
+            <g>
+              <line x1="146" y1="132" x2="166" y2="170" stroke="#4A3A25" strokeWidth="11" strokeLinecap="round" />
+              <line x1="146" y1="132" x2="166" y2="170" stroke="url(#figureLimb3d)" strokeWidth="8.5" strokeLinecap="round" />
+              <path d="M135 65 L139 69 M139 65 L135 69 M145 65 L149 69 M149 65 L145 69" stroke="#BE123C" strokeWidth="2.4" strokeLinecap="round" />
+            </g>
+          )}
+        </g>
+      </svg>
+    </div>
   );
 }
 
@@ -224,12 +283,12 @@ export function AhorcadoArena({
   return (
     <div className="flex flex-col gap-3 h-full">
       {/* Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-[#16120f] border border-amber-500/20 shadow-lg">
+      <div className="surface-3d-panel flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onExit}
-            className="min-h-[40px] px-3 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-medium text-stone-200 flex items-center gap-1.5 cursor-pointer"
+            className="min-h-[40px] px-3 rounded-lg bg-white/8 hover:bg-white/14 border border-white/10 text-xs font-medium text-stone-200 flex items-center gap-1.5 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             Salon
@@ -267,134 +326,136 @@ export function AhorcadoArena({
         </div>
       </div>
 
-      {/* Main Oak Tabletop -> Mahogany Frame -> Slate Chalkboard */}
-      <div className="flex-1 wood-tabletop rounded-2xl p-2.5 sm:p-4 border border-amber-900/40 flex flex-col">
-        <div className="flex-1 mahogany-frame rounded-2xl p-3 sm:p-4 flex flex-col">
-          <div className="flex-1 rounded-xl slate-chalkboard border border-stone-900 p-4 sm:p-6 flex flex-col justify-between gap-5 relative overflow-hidden">
-            {/* Opponent Race Bars */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-              {Object.values(state.progress).map((pr) => {
-                const mask = state.revealedMask[pr.playerId] || [];
-                const foundCount = mask.filter(Boolean).length;
-                return (
-                  <div
-                    key={pr.playerId}
-                    className={`px-3 py-2 rounded-xl border shadow-inner ${
-                      pr.playerId === localPlayer.id
-                        ? 'bg-emerald-500/12 border-emerald-400/45'
-                        : 'bg-black/35 border-white/10'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-[#f4f1ea] truncate">
-                        {playerNames[pr.playerId] || 'Player'}
-                      </span>
-                      <span className="font-mono-num text-stone-300">
-                        {foundCount}/{state.wordLength} · {pr.wrongCount}/{state.maxWrong} misses
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Gallows + Carved Ivory Secret Word Slots */}
-            <div className="flex flex-col items-center justify-center gap-5">
-              <GallowsSvg wrongCount={myProgress?.wrongCount || 0} />
-
-              {showHint && (
-                <p className="text-sm text-amber-200 bg-amber-500/12 border border-amber-400/30 px-4 py-2 rounded-xl text-center max-w-lg shadow">
-                  Clue: {state.hint}
-                </p>
-              )}
-
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
-                {myMask.map((ch, idx) => {
-                  const revealed = ch || (state.status === 'finished' ? state.secretWord[idx] : '');
-                  const missedReveal = !ch && state.status === 'finished';
+      {/* Main Oak Tabletop -> 3D Mahogany Frame -> Brass Bezel -> Slate Stage */}
+      <div className="flex-1 wood-tabletop tabletop-3d-stage rounded-2xl p-2.5 sm:p-4 border border-amber-900/45 flex flex-col">
+        <div className="flex-1 tabletop-3d-cabinet rounded-2xl p-2.5 sm:p-4 flex flex-col">
+          <div className="p-[2px] rounded-xl brass-bezel flex-1 flex flex-col">
+            <div className="flex-1 rounded-[10px] slate-chalkboard border border-stone-900 p-4 sm:p-6 flex flex-col justify-between gap-5 relative overflow-hidden">
+              {/* Opponent Race Bars */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                {Object.values(state.progress).map((pr) => {
+                  const mask = state.revealedMask[pr.playerId] || [];
+                  const foundCount = mask.filter(Boolean).length;
                   return (
                     <div
-                      key={idx}
-                      className={`w-10 h-12 sm:w-12 sm:h-14 rounded-xl flex items-center justify-center text-xl sm:text-2xl font-display font-extrabold transition-transform duration-150 ${
-                        revealed
-                          ? missedReveal
-                            ? 'bg-gradient-to-b from-rose-900 to-rose-950 border-2 border-rose-500 text-rose-200 shadow-[0_4px_0_#4c0519]'
-                            : 'ivory-3d border border-[#b9a585] text-[#1e1712]'
-                          : 'bg-black/45 border-2 border-[#4d3726] shadow-[inset_0_3px_8px_rgba(0,0,0,0.8)] text-transparent'
+                      key={pr.playerId}
+                      className={`px-3 py-2.5 rounded-xl border shadow-md ${
+                        pr.playerId === localPlayer.id
+                          ? 'bg-emerald-500/15 border-emerald-400/50'
+                          : 'bg-black/40 border-white/12'
                       }`}
                     >
-                      {revealed || '_'}
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-[#f4f1ea] truncate">
+                          {playerNames[pr.playerId] || 'Player'}
+                        </span>
+                        <span className="font-mono-num text-stone-300">
+                          {foundCount}/{state.wordLength} · {pr.wrongCount}/{state.maxWrong} misses
+                        </span>
+                      </div>
                     </div>
                   );
                 })}
               </div>
-            </div>
 
-            {/* Tactile 3D Beveled Mechanical/Ivory On-Screen Keyboard */}
-            <div className="space-y-2 max-w-2xl w-full mx-auto">
-              {KEYBOARD_ROWS.map((row, rIdx) => (
-                <div key={rIdx} className="flex items-center justify-center gap-1.5">
-                  {row.map((letter) => {
-                    const used = myProgress?.guessedLetters.includes(letter) ?? false;
-                    const isHit = used && myMask.includes(letter);
+              {/* 3D Illuminated Gallows + Carved Ivory Word Tiles */}
+              <div className="flex flex-col items-center justify-center gap-5">
+                <Gallows3DStage wrongCount={myProgress?.wrongCount || 0} />
+
+                {showHint && (
+                  <p className="text-sm text-amber-200 bg-amber-500/15 border border-amber-400/35 px-4 py-2 rounded-xl text-center max-w-lg shadow-lg">
+                    Clue: {state.hint}
+                  </p>
+                )}
+
+                <div className="walnut-trim px-4 py-3 rounded-2xl border border-amber-500/20 flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
+                  {myMask.map((ch, idx) => {
+                    const revealed = ch || (state.status === 'finished' ? state.secretWord[idx] : '');
+                    const missedReveal = !ch && state.status === 'finished';
                     return (
-                      <button
-                        key={letter}
-                        type="button"
-                        disabled={used || state.status !== 'playing' || myProgress?.eliminated}
-                        onClick={() => submitLetter(letter)}
-                        className={`min-w-[32px] sm:min-w-[44px] min-h-[44px] px-2 rounded-lg font-mono-num font-bold text-sm sm:text-base transition-transform active:translate-y-0.5 cursor-pointer ${
-                          isHit
-                            ? 'bg-gradient-to-b from-emerald-500 to-emerald-700 text-white border border-emerald-300/60 shadow-[0_3px_0_#064e3b,0_4px_8px_rgba(0,0,0,0.5)]'
-                            : used
-                            ? 'bg-rose-950/60 text-rose-300/55 border border-rose-500/20 cursor-not-allowed shadow-inner'
-                            : 'bg-gradient-to-b from-[#333c38] to-[#202623] hover:from-[#3d4843] hover:to-[#272f2b] text-[#f4f1ea] border border-white/15 shadow-[0_3px_0_#0d110f,0_4px_10px_rgba(0,0,0,0.55)]'
+                      <div
+                        key={idx}
+                        className={`w-10 h-12 sm:w-12 sm:h-14 rounded-xl flex items-center justify-center text-xl sm:text-2xl font-display font-extrabold transition-transform duration-150 ${
+                          revealed
+                            ? missedReveal
+                              ? 'bg-gradient-to-b from-rose-800 to-rose-950 border-2 border-rose-400 text-rose-100 shadow-[0_5px_0_#4c0519,0_8px_14px_rgba(0,0,0,0.65)]'
+                              : 'ivory-tile-3d border border-[#b9a585] text-[#1e1712]'
+                            : 'bg-black/55 border-2 border-[#4a3423] shadow-[inset_0_4px_10px_rgba(0,0,0,0.85)] text-transparent'
                         }`}
                       >
-                        {letter}
-                      </button>
+                        {revealed || '_'}
+                      </div>
                     );
                   })}
                 </div>
-              ))}
-            </div>
+              </div>
 
-            {/* End State Modal */}
-            {state.status === 'finished' && (
-              <div className="absolute inset-0 bg-black/75 flex items-center justify-center p-4 z-20">
-                <div className="w-full max-w-sm bg-[#141b18] border border-white/15 rounded-2xl p-6 text-center space-y-4 shadow-2xl">
-                  <Trophy className="w-10 h-10 text-amber-400 mx-auto" />
-                  <div>
-                    <h3 className="text-xl font-bold text-[#f4f1ea]">
-                      {state.winnerId === localPlayer.id ? 'Word Solved!' : 'Round Complete'}
-                    </h3>
-                    <p className="text-sm text-emerald-300 font-mono-num font-bold mt-1">
-                      Word: {state.secretWord}
-                    </p>
-                    <p className="text-xs text-stone-400 mt-1">{state.lastActionText}</p>
+              {/* Tactile 3D Mechanical Typewriter Keycaps */}
+              <div className="space-y-2 max-w-2xl w-full mx-auto">
+                {KEYBOARD_ROWS.map((row, rIdx) => (
+                  <div key={rIdx} className="flex items-center justify-center gap-1.5">
+                    {row.map((letter) => {
+                      const used = myProgress?.guessedLetters.includes(letter) ?? false;
+                      const isHit = used && myMask.includes(letter);
+                      return (
+                        <button
+                          key={letter}
+                          type="button"
+                          disabled={used || state.status !== 'playing' || myProgress?.eliminated}
+                          onClick={() => submitLetter(letter)}
+                          className={`min-w-[32px] sm:min-w-[44px] min-h-[44px] px-2 rounded-lg font-mono-num font-bold text-sm sm:text-base transition-transform cursor-pointer ${
+                            isHit
+                              ? 'bg-gradient-to-b from-emerald-500 to-emerald-700 text-white border border-emerald-300/70 shadow-[0_4px_0_#064e3b,0_6px_12px_rgba(0,0,0,0.55)]'
+                              : used
+                              ? 'bg-rose-950/65 text-rose-300/50 border border-rose-500/20 cursor-not-allowed shadow-inner translate-y-[2px]'
+                              : 'keycap-3d text-[#f4f1ea] border border-white/15 hover:brightness-115'
+                          }`}
+                        >
+                          {letter}
+                        </button>
+                      );
+                    })}
                   </div>
-                  <div className="flex items-center gap-2.5">
-                    {mode === 'ai' && (
+                ))}
+              </div>
+
+              {/* End State Modal */}
+              {state.status === 'finished' && (
+                <div className="absolute inset-0 bg-black/75 flex items-center justify-center p-4 z-20">
+                  <div className="w-full max-w-sm surface-3d-panel rounded-2xl p-6 text-center space-y-4">
+                    <Trophy className="w-10 h-10 text-amber-400 mx-auto" />
+                    <div>
+                      <h3 className="text-xl font-bold text-[#f4f1ea]">
+                        {state.winnerId === localPlayer.id ? 'Word Solved!' : 'Round Complete'}
+                      </h3>
+                      <p className="text-sm text-emerald-300 font-mono-num font-bold mt-1">
+                        Word: {state.secretWord}
+                      </p>
+                      <p className="text-xs text-stone-400 mt-1">{state.lastActionText}</p>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      {mode === 'ai' && (
+                        <button
+                          type="button"
+                          onClick={() => handleRestartAi(category)}
+                          className="flex-1 min-h-[44px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                          Next Word
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={() => handleRestartAi(category)}
-                        className="flex-1 min-h-[44px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer"
+                        onClick={onExit}
+                        className="flex-1 min-h-[44px] px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-stone-100 text-sm font-semibold cursor-pointer"
                       >
-                        <RotateCcw className="w-4 h-4" />
-                        Next Word
+                        Exit Table
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={onExit}
-                      className="flex-1 min-h-[44px] px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-stone-100 text-sm font-semibold cursor-pointer"
-                    >
-                      Exit Table
-                    </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

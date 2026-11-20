@@ -1,41 +1,55 @@
 import { useEffect, useState } from 'react';
-import { Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
-import { audioVoice } from '../lib/audioVoice.ts';
+import { Disc3, Mic, MicOff, Music, Volume2, VolumeX } from 'lucide-react';
+import { audioVoice, type MusicTheme } from '../lib/audioVoice.ts';
 import type { Language } from '../shared/types.ts';
 
 interface VoiceAnnouncerHUDProps {
   voiceEnabled: boolean;
   soundEnabled: boolean;
+  musicEnabled: boolean;
   language: Language;
   onToggleVoice: () => void;
   onToggleSound: () => void;
+  onToggleMusic: () => void;
   onToggleLanguage: () => void;
 }
 
 export function VoiceAnnouncerHUD({
   voiceEnabled,
   soundEnabled,
+  musicEnabled,
   language,
   onToggleVoice,
   onToggleSound,
+  onToggleMusic,
   onToggleLanguage,
 }: VoiceAnnouncerHUDProps) {
   const [speaking, setSpeaking] = useState(false);
   const [caption, setCaption] = useState('');
+  const [musicTheme, setMusicTheme] = useState<MusicTheme>('salon');
 
   useEffect(() => {
-    return audioVoice.subscribeVoice((isSpeaking, text) => {
+    const unsubVoice = audioVoice.subscribeVoice((isSpeaking, text) => {
       setSpeaking(isSpeaking);
       if (text) setCaption(text);
     });
+    const unsubMusic = audioVoice.subscribeMusicTheme((theme) => {
+      setMusicTheme(theme);
+    });
+    return () => {
+      unsubVoice();
+      unsubMusic();
+    };
   }, []);
 
+  const trackLabel = audioVoice.getMusicTrackLabel(musicTheme, language);
+
   return (
-    <div className="flex items-center gap-2 sm:gap-3">
+    <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
       {/* Live Voice Waveform & Caption */}
       {caption && (
         <div
-          className="hidden md:flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-black/35 border border-white/10 max-w-xs"
+          className="hidden lg:flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-black/45 border border-white/10 max-w-xs shadow-inner"
           aria-live="polite"
         >
           <div className="flex items-center gap-0.5 h-4 shrink-0">
@@ -63,6 +77,23 @@ export function VoiceAnnouncerHUD({
         title="Switch Voice & Game Language"
       >
         {language.toUpperCase()}
+      </button>
+
+      {/* Game Soundtrack Toggle */}
+      <button
+        type="button"
+        onClick={onToggleMusic}
+        className={`min-h-[40px] px-2.5 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+          musicEnabled
+            ? 'bg-emerald-500/15 border-emerald-400/40 text-emerald-200'
+            : 'bg-white/5 border-white/10 text-stone-400 hover:text-stone-200'
+        }`}
+        title={musicEnabled ? `Mute Music (${trackLabel})` : `Play Music (${trackLabel})`}
+      >
+        {musicEnabled ? <Disc3 className="w-4 h-4 text-emerald-300" /> : <Music className="w-4 h-4" />}
+        <span className="hidden sm:inline max-w-[140px] truncate">
+          {musicEnabled ? trackLabel : language === 'es' ? 'Música Off' : 'Music Off'}
+        </span>
       </button>
 
       {/* Voice Announcer Toggle */}
